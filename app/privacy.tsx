@@ -10,7 +10,7 @@ export default function PrivacyPolicyScreen() {
 
   const handleAgree = async () => {
     await updateSettings({ hasAcceptedPrivacy: true });
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/home');
   };
 
   return (

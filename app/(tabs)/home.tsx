@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, TrendingUp, TrendingDown } from 'lucide-react-native';
-import { Colors } from '../../constants/colors';
-import { useExpenseStore } from '../../hooks/expense-store';
-import { PieChart } from '../../components/PieChart';
+import { Colors } from '@/constants/colors';
+import { useExpenseStore } from '@/hooks/expense-store';
+import { PieChart } from '@/components/PieChart';
 
 const { width } = Dimensions.get('window');
 
