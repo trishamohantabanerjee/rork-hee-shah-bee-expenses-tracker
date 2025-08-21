@@ -109,16 +109,14 @@ export default function SummaryScreen() {
   } = useExpenseStore();
   
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
-  const [animatedValues] = useState(() => {
-    const values: Record<CategoryType, Animated.Value> = {} as any;
-    Object.keys(categoryIcons).forEach((category) => {
-      values[category as CategoryType] = new Animated.Value(0);
-    });
-    return values;
+  const [animatedValues] = useState<Record<CategoryType, Animated.Value>>(() => {
+    const entries = (Object.keys(categoryIcons) as Array<CategoryType>).map((cat) => [cat, new Animated.Value(0)] as const);
+    return Object.fromEntries(entries) as Record<CategoryType, Animated.Value>;
   });
 
-  const categoryTotals = useMemo(() => getExpensesByCategory(), [getExpensesByCategory]);
-  const totalExpenses = useMemo(() => getTotalMonthlyExpenses(), [getTotalMonthlyExpenses]);
+  const { expenses } = useExpenseStore();
+  const categoryTotals = useMemo(() => getExpensesByCategory(), [expenses]);
+  const totalExpenses = useMemo(() => getTotalMonthlyExpenses(), [expenses]);
   
   const allCategories: CategoryType[] = [
     'Food',
@@ -143,6 +141,21 @@ export default function SummaryScreen() {
 
     Animated.stagger(50, animations).start();
   }, []);
+
+  React.useEffect(() => {
+    (Object.keys(categoryTotals) as Array<CategoryType>).forEach((category) => {
+      const val = animatedValues[category];
+      if (!val) return;
+      val.stopAnimation(() => {
+        val.setValue(0.8);
+        Animated.timing(val, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      });
+    });
+  }, [categoryTotals]);
 
   const handleCategoryPress = async (category: CategoryType) => {
     setSelectedCategory(selectedCategory === category ? null : category);
@@ -184,14 +197,15 @@ export default function SummaryScreen() {
   const hasExpenses = totalExpenses > 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="summary-safe-area">
+      <View style={styles.header} testID="summary-header">
         <Text style={styles.title}>{t.summary}</Text>
         {hasExpenses && (
           <TouchableOpacity
             style={styles.clearButton}
             onPress={handleClearAll}
             activeOpacity={0.7}
+            testID="summary-clear-all"
           >
             <Trash2 size={20} color={Colors.error} />
           </TouchableOpacity>
@@ -202,6 +216,7 @@ export default function SummaryScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        testID="summary-scroll"
       >
         {!hasExpenses ? (
           <View style={styles.emptyState}>
@@ -210,8 +225,8 @@ export default function SummaryScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.tableContainer}>
-              <View style={styles.tableHeader}>
+            <View style={styles.tableContainer} testID="summary-table">
+              <View style={styles.tableHeader} testID="summary-table-header">
                 <Text style={styles.tableHeaderText}>{t.category}</Text>
                 <Text style={styles.tableHeaderText}>{t.amount}</Text>
               </View>
@@ -230,7 +245,7 @@ export default function SummaryScreen() {
                 );
               })}
               
-              <View style={styles.totalRow}>
+              <View style={styles.totalRow} testID="summary-total-row">
                 <View style={styles.totalContent}>
                   <Text style={styles.totalLabel}>{t.total}</Text>
                   <Text style={styles.totalAmount}>₹{totalExpenses.toLocaleString()}</Text>
@@ -245,6 +260,9 @@ export default function SummaryScreen() {
         style={styles.fab}
         onPress={handleAddExpense}
         activeOpacity={0.8}
+        testID="summary-add-expense"
+        accessibilityRole="button"
+        accessibilityLabel={t.addExpense}
       >
         <Plus size={24} color={Colors.text} />
       </TouchableOpacity>
