@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Plus, BarChart3, Settings } from 'lucide-react-native';
+import { Home, Plus, BarChart3, Settings, List } from 'lucide-react-native';
 import { useExpenseStore } from '../../hooks/expense-store';
 
 export default function TabLayout() {
@@ -32,6 +32,13 @@ export default function TabLayout() {
         options={{
           title: t.home,
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="summary"
+        options={{
+          title: t.summary || 'Summary',
+          tabBarIcon: ({ color, size }) => <List size={size} color={color} />,
         }}
       />
       <Tabs.Screen
