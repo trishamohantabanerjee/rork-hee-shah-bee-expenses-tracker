@@ -1,0 +1,289 @@
+import React from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity,
+  Switch,
+  Alert 
+} from 'react-native';
+import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  Globe, 
+  Moon, 
+  Trash2, 
+  Download, 
+  Upload, 
+  Shield,
+  ChevronRight 
+} from 'lucide-react-native';
+import { Colors } from '@/constants/colors';
+import { useExpenseStore } from '@/hooks/expense-store';
+
+export default function SettingsScreen() {
+  const { settings, updateSettings, clearAllData, t } = useExpenseStore();
+
+  const handleLanguageToggle = () => {
+    const newLanguage = settings.language === 'en' ? 'hi' : 'en';
+    updateSettings({ language: newLanguage });
+  };
+
+  const handleDarkModeToggle = () => {
+    updateSettings({ darkMode: !settings.darkMode });
+  };
+
+  const handleClearData = () => {
+    Alert.alert(
+      'Clear Data',
+      t.confirmClear,
+      [
+        { text: t.no, style: 'cancel' },
+        { 
+          text: t.yes, 
+          style: 'destructive',
+          onPress: async () => {
+            const success = await clearAllData();
+            if (success) {
+              Alert.alert('Success', 'All data cleared successfully');
+            } else {
+              Alert.alert('Error', 'Failed to clear data');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleBackup = () => {
+    Alert.alert(
+      'Backup Data',
+      'Backup functionality would save your data to a local file.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleRestore = () => {
+    Alert.alert(
+      'Restore Data',
+      'Restore functionality would load data from a backup file.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const settingsItems = [
+    {
+      icon: Globe,
+      title: t.language,
+      subtitle: settings.language === 'en' ? 'English' : 'हिंदी',
+      onPress: handleLanguageToggle,
+      showChevron: true,
+    },
+    {
+      icon: Moon,
+      title: t.darkMode,
+      subtitle: 'Always enabled for better experience',
+      onPress: handleDarkModeToggle,
+      showSwitch: true,
+      switchValue: settings.darkMode,
+    },
+    {
+      icon: Download,
+      title: t.backup,
+      subtitle: 'Save your data locally',
+      onPress: handleBackup,
+      showChevron: true,
+    },
+    {
+      icon: Upload,
+      title: t.restore,
+      subtitle: 'Load data from backup',
+      onPress: handleRestore,
+      showChevron: true,
+    },
+    {
+      icon: Shield,
+      title: t.privacyPolicy,
+      subtitle: 'View privacy policy',
+      onPress: () => router.push('/privacy'),
+      showChevron: true,
+    },
+    {
+      icon: Trash2,
+      title: t.clearData,
+      subtitle: 'Delete all expenses and budget',
+      onPress: handleClearData,
+      showChevron: true,
+      destructive: true,
+    },
+  ];
+
+  return (
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <Text style={styles.title}>{t.settings}</Text>
+          
+          <View style={styles.settingsContainer}>
+            {settingsItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.settingItem,
+                  item.destructive && styles.destructiveItem
+                ]}
+                onPress={item.onPress}
+                activeOpacity={0.7}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[
+                    styles.iconContainer,
+                    item.destructive && styles.destructiveIconContainer
+                  ]}>
+                    <item.icon 
+                      size={20} 
+                      color={item.destructive ? Colors.error : Colors.primary} 
+                    />
+                  </View>
+                  <View style={styles.settingText}>
+                    <Text style={[
+                      styles.settingTitle,
+                      item.destructive && styles.destructiveText
+                    ]}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.settingRight}>
+                  {item.showSwitch && (
+                    <Switch
+                      value={item.switchValue}
+                      onValueChange={item.onPress}
+                      trackColor={{ false: Colors.border, true: Colors.primary }}
+                      thumbColor={Colors.text}
+                    />
+                  )}
+                  {item.showChevron && (
+                    <ChevronRight 
+                      size={20} 
+                      color={Colors.textSecondary} 
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.appInfo}>
+            <Text style={styles.appName}>{t.appName}</Text>
+            <Text style={styles.version}>Version 1.0.0</Text>
+            <Text style={styles.description}>
+              A simple and secure expense tracker that keeps your data private.
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: 24,
+    marginTop: 20,
+  },
+  settingsContainer: {
+    marginBottom: 32,
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  destructiveItem: {
+    borderColor: `${Colors.error}30`,
+    backgroundColor: `${Colors.error}10`,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${Colors.primary}20`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  destructiveIconContainer: {
+    backgroundColor: `${Colors.error}20`,
+  },
+  settingText: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  destructiveText: {
+    color: Colors.error,
+  },
+  settingSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  settingRight: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appInfo: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  version: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 12,
+  },
+  description: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 20,
+  },
+});
