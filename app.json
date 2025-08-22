@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Hee-Shah-Bee Expenses Tracker",
-    "slug": "hee-shah-bee-expenses-tracker",
+    "name": "HeeSaaBee Expenses Tracker",
+    "slug": "hee-saa-bee-expenses-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.hee-shah-bee-expenses-tracker"
+      "bundleIdentifier": "app.rork.hee-saa-bee-expenses-tracker"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.hee-shah-bee-expenses-tracker",
+      "package": "app.rork.hee-saa-bee-expenses-tracker",
       "permissions": [
         "android.permission.VIBRATE"
       ]
