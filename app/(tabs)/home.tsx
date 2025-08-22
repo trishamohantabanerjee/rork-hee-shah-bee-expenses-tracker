@@ -157,6 +157,7 @@ export default function HomeTab() {
                         onFocus={() => setFocusedCategory(cat)}
                         onBlur={() => setFocusedCategory(null)}
                         selectionColor="#25D366"
+                        underlineColorAndroid="transparent"
                       />
                     </View>
                   </Animated.View>
@@ -289,6 +290,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#001A33',
     overflow: 'hidden',
+    shadowColor: 'transparent',
+    elevation: 0,
   },
   inputRowFocused: {
     borderColor: '#25D366',
@@ -308,6 +311,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     paddingVertical: 10,
     maxWidth: '100%',
+    includeFontPadding: false as unknown as boolean,
+    textAlignVertical: 'center',
   },
   quickInputWeb: {
     outlineStyle: 'none',
