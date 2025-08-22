@@ -3,14 +3,22 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 // import * as Localization from 'expo-localization';
-import type { AppSettings, Budget, Expense } from '@/types/expense';
+import type { AppSettings, Budget, Expense, CategoryType } from '@/types/expense';
 import { translations } from '@/constants/translations';
 
 const STORAGE_KEYS = {
   EXPENSES: 'hee_shah_bee_expenses',
   BUDGET: 'hee_shah_bee_budget',
   SETTINGS: 'hee_shah_bee_settings',
+  DRAFT: 'hee_shah_bee_expense_draft',
 } as const;
+
+type ExpenseDraft = {
+  amount: string;
+  category: CategoryType;
+  date: string;
+  notes: string;
+};
 
 export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -22,6 +30,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   });
   const [hasSeenSplash, setHasSeenSplash] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [draft, setDraft] = useState<ExpenseDraft | null>(null);
 
   const t = translations[settings.language];
 
@@ -31,11 +40,12 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const loadData = async () => {
     try {
-      const [expensesData, budgetData, settingsData, splashData] = await Promise.all([
+      const [expensesData, budgetData, settingsData, splashData, draftData] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.EXPENSES),
         AsyncStorage.getItem(STORAGE_KEYS.BUDGET),
         AsyncStorage.getItem(STORAGE_KEYS.SETTINGS),
         AsyncStorage.getItem('hee_shah_bee_splash'),
+        AsyncStorage.getItem(STORAGE_KEYS.DRAFT),
       ]);
 
       if (expensesData) {
@@ -64,6 +74,15 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
       if (splashData) {
         setHasSeenSplash(JSON.parse(splashData));
+      }
+
+      if (draftData) {
+        setDraft(JSON.parse(draftData));
+      } else {
+        const today = new Date().toISOString().split('T')[0];
+        const initialDraft: ExpenseDraft = { amount: '', category: 'Food', date: today, notes: '' };
+        setDraft(initialDraft);
+        await AsyncStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(initialDraft));
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -95,6 +114,37 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       return false;
     }
   }, [expenses]);
+
+  const updateDraft = useCallback(async (partial: Partial<ExpenseDraft>) => {
+    try {
+      const current: ExpenseDraft = {
+        amount: draft?.amount ?? '',
+        category: draft?.category ?? 'Food',
+        date: draft?.date ?? new Date().toISOString().split('T')[0],
+        notes: draft?.notes ?? '',
+      };
+      const nextDraft: ExpenseDraft = { ...current, ...partial };
+      setDraft(nextDraft);
+      await AsyncStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(nextDraft));
+      return true;
+    } catch (error) {
+      console.error('Error updating draft:', error);
+      return false;
+    }
+  }, [draft]);
+
+  const clearDraft = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const emptyDraft: ExpenseDraft = { amount: '', category: 'Food', date: today, notes: '' };
+      setDraft(emptyDraft);
+      await AsyncStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(emptyDraft));
+      return true;
+    } catch (error) {
+      console.error('Error clearing draft:', error);
+      return false;
+    }
+  }, []);
 
   const updateBudget = useCallback(async (newBudget: Budget) => {
     try {
@@ -193,7 +243,10 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     isLoading,
     hasSeenSplash,
     t,
+    draft,
     addExpense,
+    updateDraft,
+    clearDraft,
     updateBudget,
     updateSettings,
     clearAllData,
@@ -202,5 +255,5 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     getRemainingBudget,
     getExpensesByCategory,
     markSplashAsSeen,
-  }), [expenses, budget, settings, isLoading, hasSeenSplash, t, addExpense, updateBudget, updateSettings, clearAllData, getCurrentMonthExpenses, getTotalMonthlyExpenses, getRemainingBudget, getExpensesByCategory, markSplashAsSeen]);
+  }), [expenses, budget, settings, isLoading, hasSeenSplash, t, draft, addExpense, updateDraft, clearDraft, updateBudget, updateSettings, clearAllData, getCurrentMonthExpenses, getTotalMonthlyExpenses, getRemainingBudget, getExpensesByCategory, markSplashAsSeen]);
 });

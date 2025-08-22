@@ -1,27 +1,94 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, Platform, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, TrendingUp, TrendingDown } from 'lucide-react-native';
-import { Colors } from '@/constants/colors';
+import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal } from 'lucide-react-native';
+import { Colors, CategoryColors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 import { PieChart } from '@/components/PieChart';
+import type { CategoryType } from '@/types/expense';
 
 const { width } = Dimensions.get('window');
+
+const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
+  Food: Utensils,
+  Transport: Car,
+  Utilities: Zap,
+  Entertainment: Gamepad2,
+  Shopping: ShoppingBag,
+  Healthcare: Heart,
+  Education: GraduationCap,
+  Others: MoreHorizontal,
+};
 
 export default function HomeTab() {
   const { 
     getTotalMonthlyExpenses, 
     getRemainingBudget, 
     getExpensesByCategory,
+    addExpense,
     budget,
-    t
+    t,
+    expenses,
   } = useExpenseStore();
 
   const totalExpenses = getTotalMonthlyExpenses();
   const remainingBudget = getRemainingBudget();
-  const categoryData = getExpensesByCategory();
+  const categoryData = useMemo(() => getExpensesByCategory(), [expenses]);
   const isOverBudget = remainingBudget !== null && remainingBudget < 0;
+
+  const allCategories: CategoryType[] = ['Food','Transport','Utilities','Entertainment','Shopping','Healthcare','Education','Others'];
+  const [quickValues, setQuickValues] = useState<Record<CategoryType, string>>({
+    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '',
+  });
+  const timersRef = useRef<Partial<Record<CategoryType, ReturnType<typeof setTimeout>>>>({});
+  const flashesRef = useRef<Record<CategoryType, Animated.Value>>({
+    Food: new Animated.Value(0),
+    Transport: new Animated.Value(0),
+    Utilities: new Animated.Value(0),
+    Entertainment: new Animated.Value(0),
+    Shopping: new Animated.Value(0),
+    Healthcare: new Animated.Value(0),
+    Education: new Animated.Value(0),
+    Others: new Animated.Value(0),
+  });
+
+  const triggerFlash = (category: CategoryType) => {
+    const v = flashesRef.current[category];
+    v.setValue(0);
+    Animated.sequence([
+      Animated.timing(v, { toValue: 1, duration: 120, useNativeDriver: false }),
+      Animated.timing(v, { toValue: 0, duration: 300, useNativeDriver: false }),
+    ]).start();
+  };
+
+  const onQuickChange = async (category: CategoryType, text: string) => {
+    const sanitized = text.replace(/[^0-9.]/g, '');
+    setQuickValues(prev => ({ ...prev, [category]: sanitized }));
+
+    const existing = timersRef.current[category];
+    if (existing) clearTimeout(existing);
+
+    timersRef.current[category] = setTimeout(async () => {
+      const amount = parseFloat(sanitized);
+      if (!isNaN(amount) && amount > 0) {
+        const today = new Date().toISOString().split('T')[0];
+        const success = await addExpense({ amount, category, date: today, notes: '' });
+        if (success) {
+          if (Platform.OS !== 'web') {
+            try {
+              const Haptics = await import('expo-haptics');
+              await Haptics.selectionAsync();
+            } catch (e) {
+              console.log('Haptics not available');
+            }
+          }
+          triggerFlash(category);
+        }
+      }
+      setQuickValues(prev => ({ ...prev, [category]: '' }));
+    }, 600);
+  };
 
   return (
     <View style={styles.container}>
@@ -53,6 +120,42 @@ export default function HomeTab() {
             )}
           </View>
 
+          <View style={styles.quickAddContainer}>
+            <Text style={styles.sectionTitle}>Quick Add</Text>
+            <View style={styles.quickGrid}>
+              {allCategories.map((cat) => {
+                const Icon = categoryIcons[cat];
+                const flash = flashesRef.current[cat].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['rgba(37,211,102,0)', 'rgba(37,211,102,0.25)'],
+                });
+                return (
+                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash }]}> 
+                    <View style={styles.quickHeader}>
+                      <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat] + '20' }]}>
+                        <Icon size={18} color={CategoryColors[cat]} />
+                      </View>
+                      <Text style={styles.quickLabel}>{t.categories[cat]}</Text>
+                    </View>
+                    <View style={styles.inputRow}>
+                      <Text style={styles.currency}>₹</Text>
+                      <TextInput
+                        testID={`quick-input-${cat}`}
+                        style={styles.quickInput}
+                        value={quickValues[cat]}
+                        onChangeText={(txt) => onQuickChange(cat, txt)}
+                        placeholder="0"
+                        placeholderTextColor={Colors.textSecondary}
+                        keyboardType="numeric"
+                        returnKeyType="done"
+                      />
+                    </View>
+                  </Animated.View>
+                );
+              })}
+            </View>
+          </View>
+
           <View style={styles.chartContainer}>
             <Text style={styles.sectionTitle}>Expenses by Category</Text>
             <PieChart data={categoryData} size={Math.min(width * 0.8, 250)} />
@@ -63,6 +166,7 @@ export default function HomeTab() {
           style={styles.fab} 
           onPress={() => router.push('/add-expense')}
           activeOpacity={0.8}
+          testID="home-add-expense"
         >
           <Plus size={28} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
@@ -93,7 +197,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   statCard: {
     flex: 1,
@@ -126,15 +230,68 @@ const styles = StyleSheet.create({
   overBudgetText: {
     color: '#FF6B6B',
   },
-  chartContainer: {
-    alignItems: 'center',
-    marginBottom: 100,
+  quickAddContainer: {
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 20,
+    marginBottom: 12,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  quickItem: {
+    width: '48%',
+    backgroundColor: '#002A5C',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#004080',
+    padding: 12,
+  },
+  quickHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  iconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  quickLabel: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    flex: 1,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#001A33',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+  },
+  currency: {
+    color: '#25D366',
+    fontSize: 18,
+    marginRight: 6,
+  },
+  quickInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 18,
+    paddingVertical: 10,
+  },
+  chartContainer: {
+    alignItems: 'center',
+    marginBottom: 100,
   },
   fab: {
     position: 'absolute',

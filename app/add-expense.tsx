@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -40,31 +40,34 @@ const categoryIcons = {
 };
 
 export default function AddExpenseScreen() {
-  const { addExpense, t } = useExpenseStore();
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState<CategoryType>('Food');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
+  const { addExpense, t, draft, updateDraft, clearDraft } = useExpenseStore();
+  const [amount, setAmount] = useState<string>(draft?.amount ?? '');
+  const [category, setCategory] = useState<CategoryType>(draft?.category ?? 'Food');
+  const [date, setDate] = useState<string>(draft?.date ?? new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState<string>(draft?.notes ?? '');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSave = async () => {
+  useEffect(() => {
+    updateDraft({ amount, category, date, notes });
+  }, [amount, category, date, notes]);
+
+  const handleConfirmAdd = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
 
     setIsLoading(true);
-    
     const success = await addExpense({
       amount: parseFloat(amount),
       category,
       date,
       notes: notes.trim(),
     });
-
     setIsLoading(false);
 
     if (success) {
+      await clearDraft();
       Alert.alert('Success', t.expenseAdded, [
         { text: 'OK', onPress: () => router.back() }
       ]);
@@ -98,7 +101,7 @@ export default function AddExpenseScreen() {
                 <TextInput
                   style={styles.amountInput}
                   value={amount}
-                  onChangeText={setAmount}
+                  onChangeText={(txt) => setAmount(txt.replace(/[^0-9.]/g, ''))}
                   placeholder="0"
                   placeholderTextColor={Colors.textSecondary}
                   keyboardType="numeric"
@@ -116,17 +119,17 @@ export default function AddExpenseScreen() {
                       key={cat}
                       style={[
                         styles.categoryButton,
-                        category === cat && styles.categoryButtonActive
+                        category === (cat as CategoryType) && styles.categoryButtonActive
                       ]}
                       onPress={() => setCategory(cat as CategoryType)}
                     >
                       <Icon 
                         size={24} 
-                        color={category === cat ? Colors.background : Colors.text} 
+                        color={category === (cat as CategoryType) ? Colors.background : Colors.text} 
                       />
                       <Text style={[
                         styles.categoryText,
-                        category === cat && styles.categoryTextActive
+                        category === (cat as CategoryType) && styles.categoryTextActive
                       ]}>
                         {t.categories[cat as keyof typeof t.categories]}
                       </Text>
@@ -176,7 +179,7 @@ export default function AddExpenseScreen() {
           
           <TouchableOpacity 
             style={[styles.saveButton, isLoading && styles.saveButtonDisabled]} 
-            onPress={handleSave}
+            onPress={handleConfirmAdd}
             disabled={isLoading}
           >
             <Save size={20} color={Colors.background} />
