@@ -130,7 +130,7 @@ export default function HomeTab() {
                   inputRange: [0, 1],
                   outputRange: ['rgba(37,211,102,0)', 'rgba(37,211,102,0.25)'],
                 });
-                const gridItemWidth = width >= 1024 ? '23.5%' : width >= 768 ? '31.5%' : '48%';
+                const gridItemWidth: string = '48%';
                 return (
                   <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth }]}> 
                     <View style={styles.quickHeader}>
@@ -204,7 +204,6 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: 12,
     marginBottom: 24,
   },
   statCard: {
@@ -251,7 +250,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
   },
   quickItem: {
     backgroundColor: '#002A5C',
@@ -260,6 +258,8 @@ const styles = StyleSheet.create({
     borderColor: '#004080',
     padding: 12,
     overflow: 'hidden',
+    height: 120,
+    marginBottom: 16,
   },
   quickHeader: {
     flexDirection: 'row',
@@ -315,6 +315,8 @@ const styles = StyleSheet.create({
   } as any,
   chartContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
     marginBottom: 100,
   },
   fab: {

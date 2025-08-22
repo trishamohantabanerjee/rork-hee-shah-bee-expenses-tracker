@@ -44,39 +44,41 @@ export function PieChart({ data, size = Math.min(width * 0.6, 220), centerLabel 
     });
 
   return (
-    <View style={[styles.container, { width: size, height: size }]}
+    <View style={[styles.container, { width: size, height: 'auto' }]}
       testID="piechart-container"
     >
-      <Svg width={size} height={size}>
-        <G x={size / 2} y={size / 2}>
-          <Circle
-            r={radius}
-            stroke={Colors.border}
-            strokeWidth={strokeWidth}
-            fill="transparent"
-            opacity={0.4}
-            transform={`rotate(-90)`}
-          />
-          {segments.map((segment) => (
+      <View style={[styles.chartWrap, { width: size, height: size }]}>
+        <Svg width={size} height={size}>
+          <G x={size / 2} y={size / 2}>
             <Circle
-              key={segment.category}
               r={radius}
-              stroke={segment.color}
+              stroke={Colors.border}
               strokeWidth={strokeWidth}
               fill="transparent"
-              strokeDasharray={segment.strokeDasharray}
-              strokeDashoffset={segment.strokeDashoffset}
-              strokeLinecap="butt"
+              opacity={0.4}
               transform={`rotate(-90)`}
             />
-          ))}
-        </G>
-      </Svg>
+            {segments.map((segment) => (
+              <Circle
+                key={segment.category}
+                r={radius}
+                stroke={segment.color}
+                strokeWidth={strokeWidth}
+                fill="transparent"
+                strokeDasharray={segment.strokeDasharray}
+                strokeDashoffset={segment.strokeDashoffset}
+                strokeLinecap="butt"
+                transform={`rotate(-90)`}
+              />
+            ))}
+          </G>
+        </Svg>
 
-      <View pointerEvents="none" style={styles.centerLabelWrap}>
-        <Text style={styles.centerLabel} numberOfLines={2}>
-          {centerLabel}
-        </Text>
+        <View pointerEvents="none" style={styles.centerLabelWrap}>
+          <Text style={styles.centerLabel} numberOfLines={2}>
+            {centerLabel}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.legend}>
@@ -101,6 +103,11 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  chartWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   emptyChart: {
     width: '100%',
@@ -133,12 +140,18 @@ const styles = StyleSheet.create({
   },
   legend: {
     marginTop: 16,
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    rowGap: 8 as unknown as number,
+    columnGap: 16 as unknown as number,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 4,
+    marginRight: 16,
   },
   legendColor: {
     width: 12,
