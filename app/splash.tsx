@@ -52,7 +52,7 @@ export default function SplashScreen() {
         <View style={styles.iconContainer}>
           <IndianRupee size={60} color="#25D366" strokeWidth={2} />
         </View>
-        <Text style={styles.title}>Hee-Shah-Bee</Text>
+        <Text style={styles.title}>HeeSaaBee</Text>
         <Text style={styles.subtitle}>Track your expenses</Text>
       </Animated.View>
     </View>

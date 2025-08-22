@@ -20,19 +20,13 @@ export default function PrivacyPolicyScreen() {
           <Text style={styles.title}>{t.privacyPolicy}</Text>
           
           <Text style={styles.content}>
-            Hee-Shah-Bee collects no personal data. All expenses are stored locally on your device and never shared. 
-            
-            Under India's DPDP Act 2023, we ensure data minimization and require your consent for any future updates. 
-            
-            For GDPR (EU users): You have rights to access, delete, or port your data—contact support. 
-            
-            For CCPA (US users): Opt-out of data sales (none occur). 
-            
-            No tracking or ads. By using, you consent to local storage only. 
-            
-            For questions: support@heeshahbee.com
-            
-            Updated: August 2025.
+            HeeSaaBee collects no personal data. All expenses are stored locally on your device and never shared.
+            {'\n\n'}Under India's DPDP Act 2023, we ensure data minimization and require your consent for any future updates.
+            {'\n\n'}For GDPR (EU users): You have rights to access, delete, or port your data—contact support.
+            {'\n\n'}For CCPA (US users): Opt-out of data sales (none occur).
+            {'\n\n'}No tracking or ads. By using, you consent to local storage only.
+            {'\n\n'}For questions: support@heesaabee.com
+            {'\n\n'}Updated: August 2025.
           </Text>
         </ScrollView>
         

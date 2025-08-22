@@ -1,6 +1,6 @@
 export const translations = {
   en: {
-    appName: 'Hee-Shah-Bee',
+    appName: 'HeeSaaBee',
     home: 'Home',
     add: 'Add',
     reports: 'Reports',
@@ -50,7 +50,7 @@ export const translations = {
     },
   },
   hi: {
-    appName: 'ही-शाह-बी',
+    appName: 'HeeSaaBee',
     home: 'होम',
     add: 'जोड़ें',
     reports: 'रिपोर्ट',

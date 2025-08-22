@@ -130,8 +130,9 @@ export default function HomeTab() {
                   inputRange: [0, 1],
                   outputRange: ['rgba(37,211,102,0)', 'rgba(37,211,102,0.25)'],
                 });
+                const gridItemWidth = width >= 1024 ? '23.5%' : width >= 768 ? '31.5%' : '48%';
                 return (
-                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash }]}> 
+                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth }]}> 
                     <View style={styles.quickHeader}>
                       <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat] + '20' }]}>
                         <Icon size={18} color={CategoryColors[cat]} />
@@ -141,12 +142,12 @@ export default function HomeTab() {
                     <View style={[
                       styles.inputRow,
                       focusedCategory === cat ? styles.inputRowFocused : null,
-                      Platform.OS === 'web' ? styles.inputRowWeb as any : null,
+                      Platform.OS === 'web' ? (styles.inputRowWeb as any) : null,
                     ]}>
                       <Text style={styles.currency}>₹</Text>
                       <TextInput
                         testID={`quick-input-${cat}`}
-                        style={[styles.quickInput, Platform.OS === 'web' ? styles.quickInputWeb as any : null]}
+                        style={[styles.quickInput, Platform.OS === 'web' ? (styles.quickInputWeb as any) : null]}
                         value={quickValues[cat]}
                         onChangeText={(txt) => onQuickChange(cat, txt)}
                         placeholder="0"
@@ -165,8 +166,7 @@ export default function HomeTab() {
           </View>
 
           <View style={styles.chartContainer}>
-            <Text style={styles.sectionTitle}>Expenses by Category</Text>
-            <PieChart data={categoryData} size={Math.min(width * 0.8, 250)} />
+            <PieChart data={categoryData} size={width >= 1024 ? Math.min(width * 0.35, 360) : width >= 768 ? Math.min(width * 0.5, 320) : Math.min(width * 0.86, 280)} />
           </View>
         </ScrollView>
         
@@ -254,7 +254,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   quickItem: {
-    width: '48%',
     backgroundColor: '#002A5C',
     borderRadius: 12,
     borderWidth: 1,
