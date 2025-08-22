@@ -52,6 +52,7 @@ export default function HomeTab() {
     Education: new Animated.Value(0),
     Others: new Animated.Value(0),
   });
+  const [focusedCategory, setFocusedCategory] = useState<CategoryType | null>(null);
 
   const triggerFlash = (category: CategoryType) => {
     const v = flashesRef.current[category];
@@ -137,17 +138,24 @@ export default function HomeTab() {
                       </View>
                       <Text style={styles.quickLabel}>{t.categories[cat]}</Text>
                     </View>
-                    <View style={styles.inputRow}>
+                    <View style={[
+                      styles.inputRow,
+                      focusedCategory === cat ? styles.inputRowFocused : null,
+                      Platform.OS === 'web' ? styles.inputRowWeb as any : null,
+                    ]}>
                       <Text style={styles.currency}>₹</Text>
                       <TextInput
                         testID={`quick-input-${cat}`}
-                        style={styles.quickInput}
+                        style={[styles.quickInput, Platform.OS === 'web' ? styles.quickInputWeb as any : null]}
                         value={quickValues[cat]}
                         onChangeText={(txt) => onQuickChange(cat, txt)}
                         placeholder="0"
                         placeholderTextColor={Colors.textSecondary}
                         keyboardType="numeric"
                         returnKeyType="done"
+                        onFocus={() => setFocusedCategory(cat)}
+                        onBlur={() => setFocusedCategory(null)}
+                        selectionColor="#25D366"
                       />
                     </View>
                   </Animated.View>
@@ -252,6 +260,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#004080',
     padding: 12,
+    overflow: 'hidden',
   },
   quickHeader: {
     flexDirection: 'row',
@@ -277,7 +286,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#001A33',
     borderRadius: 10,
     paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#001A33',
+    overflow: 'hidden',
   },
+  inputRowFocused: {
+    borderColor: '#25D366',
+    backgroundColor: '#001F3F',
+  },
+  inputRowWeb: {
+    boxSizing: 'border-box',
+  } as any,
   currency: {
     color: '#25D366',
     fontSize: 18,
@@ -288,7 +308,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     paddingVertical: 10,
+    maxWidth: '100%',
   },
+  quickInputWeb: {
+    outlineStyle: 'none',
+    outlineWidth: 0,
+  } as any,
   chartContainer: {
     alignItems: 'center',
     marginBottom: 100,
