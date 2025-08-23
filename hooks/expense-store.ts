@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 // import * as Localization from 'expo-localization';
 import type { AppSettings, Budget, Expense, CategoryType } from '@/types/expense';
 import { translations } from '@/constants/translations';
+import * as SecureStore from 'expo-secure-store';
 
 const STORAGE_KEYS = {
   EXPENSES: 'hee_shah_bee_expenses',
@@ -27,6 +28,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     language: 'en',
     darkMode: true,
     hasAcceptedPrivacy: false,
+    appLockEnabled: false,
   });
   const [hasSeenSplash, setHasSeenSplash] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +59,16 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       }
 
       if (settingsData) {
-        setSettings(JSON.parse(settingsData));
+        const parsed: AppSettings = JSON.parse(settingsData);
+        try {
+          if (Platform.OS !== 'web') {
+            const lock = await SecureStore.getItemAsync('app_lock_enabled');
+            parsed.appLockEnabled = lock === '1';
+          }
+        } catch (e) {
+          // ignore
+        }
+        setSettings(parsed);
       } else {
         const deviceLanguage = Platform.OS === 'web' 
           ? navigator.language.startsWith('hi') ? 'hi' : 'en'
@@ -67,6 +78,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
           language: deviceLanguage,
           darkMode: true,
           hasAcceptedPrivacy: false,
+          appLockEnabled: false,
         };
         setSettings(initialSettings);
         await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(initialSettings));
@@ -168,6 +180,17 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
       await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updatedSettings));
+      if (typeof newSettings.appLockEnabled === 'boolean') {
+        try {
+          if (Platform.OS !== 'web') {
+            await SecureStore.setItemAsync('app_lock_enabled', newSettings.appLockEnabled ? '1' : '0');
+          } else {
+            await AsyncStorage.setItem('app_lock_enabled', newSettings.appLockEnabled ? '1' : '0');
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
       return true;
     } catch (error) {
       console.error('Error updating settings:', error);

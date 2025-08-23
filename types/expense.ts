@@ -17,6 +17,7 @@ export interface AppSettings {
   language: 'en' | 'hi';
   darkMode: boolean;
   hasAcceptedPrivacy: boolean;
+  appLockEnabled?: boolean;
 }
 
 export type CategoryType = 'Food' | 'Transport' | 'Utilities' | 'Entertainment' | 'Shopping' | 'Healthcare' | 'Education' | 'Others';

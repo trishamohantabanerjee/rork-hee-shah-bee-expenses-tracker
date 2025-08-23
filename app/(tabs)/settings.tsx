@@ -19,7 +19,8 @@ import {
   Upload, 
   Shield,
   ChevronRight,
-  CalendarClock 
+  CalendarClock,
+  Lock
 } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
@@ -98,20 +99,7 @@ export default function SettingsScreen() {
       icon: CalendarClock,
       title: t.clearDailyData ?? 'Clear Daily Data',
       subtitle: t.clearDailyDataSubtitle ?? "Delete today's entries only",
-      onPress: () => {
-        Alert.alert(
-          t.clearDailyData ?? 'Clear Daily Data',
-          t.confirmClearDaily ?? "Are you sure? This will delete today's entries and cannot be undone.",
-          [
-            { text: t.cancel ?? 'Cancel', style: 'cancel' },
-            { text: t.backupFirst ?? 'Backup CSV', onPress: handleBackup },
-            { text: t.yes ?? 'Yes', style: 'destructive', onPress: async () => {
-              const ok = await clearDailyData();
-              Alert.alert(ok ? (t.success ?? 'Success') : (t.error ?? 'Error'), ok ? (t.clearedDaily ?? "Today's entries cleared") : (t.failed ?? 'Operation failed'));
-            }},
-          ]
-        );
-      },
+      onPress: () => router.push('/clear-days'),
       showChevron: true,
     },
     {
@@ -141,6 +129,40 @@ export default function SettingsScreen() {
       title: t.privacyPolicy,
       subtitle: 'View privacy policy',
       onPress: () => router.push('/privacy'),
+      showChevron: true,
+    },
+    {
+      icon: Lock,
+      title: 'App Lock',
+      subtitle: settings.appLockEnabled ? 'Biometric lock enabled' : 'Enable biometric lock',
+      onPress: async () => {
+        try {
+          if (settings.appLockEnabled) {
+            await updateSettings({ appLockEnabled: false });
+            Alert.alert('App Lock', 'Disabled');
+            return;
+          }
+          if (typeof navigator !== 'undefined' && 'credentials' in navigator && Platform.OS === 'web') {
+            await updateSettings({ appLockEnabled: true });
+            Alert.alert('App Lock', 'Enabled (web mock)');
+            return;
+          }
+          const LocalAuthentication = await import('expo-local-authentication');
+          const enrolled = await LocalAuthentication.hasHardwareAsync();
+          const supported = await LocalAuthentication.isEnrolledAsync();
+          if (!enrolled || !supported) {
+            Alert.alert('Unavailable', 'No biometrics enrolled on this device.');
+            return;
+          }
+          const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Enable App Lock' });
+          if (result.success) {
+            await updateSettings({ appLockEnabled: true });
+            Alert.alert('App Lock', 'Enabled');
+          }
+        } catch (e) {
+          Alert.alert('Error', 'Failed to configure app lock');
+        }
+      },
       showChevron: true,
     },
     {
