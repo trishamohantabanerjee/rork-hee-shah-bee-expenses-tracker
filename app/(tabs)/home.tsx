@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, Platform, Animated, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal } from 'lucide-react-native';
+import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal, ExternalLink } from 'lucide-react-native';
 import { Colors, CategoryColors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 import { PieChart } from '@/components/PieChart';
@@ -180,9 +180,99 @@ export default function HomeTab() {
           <Plus size={28} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
       </SafeAreaView>
+
+      <PrivacyGate />
     </View>
   );
 }
+
+const PrivacyGate: React.FC = React.memo(() => {
+  const { settings, updateSettings, t } = useExpenseStore();
+  const [visible, setVisible] = useState<boolean>(!settings.hasAcceptedPrivacy);
+
+  React.useEffect(() => {
+    setVisible(!settings.hasAcceptedPrivacy);
+  }, [settings.hasAcceptedPrivacy]);
+
+  const onAgree = async () => {
+    await updateSettings({ hasAcceptedPrivacy: true });
+    setVisible(false);
+  };
+
+  return (
+    <Modal
+      animationType="fade"
+      transparent
+      visible={visible}
+      onRequestClose={() => {}}
+    >
+      <View style={modalStyles.overlay}>
+        <View style={modalStyles.card}>
+          <Text style={modalStyles.title}>Please review and agree to our Privacy Policy to continue.</Text>
+          <TouchableOpacity style={modalStyles.button} onPress={onAgree} activeOpacity={0.8} testID="privacy-agree">
+            <Text style={modalStyles.buttonText}>{t.agree}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={modalStyles.linkRow} onPress={() => router.push('/privacy')} activeOpacity={0.7}>
+            <ExternalLink size={16} color={Colors.primary} />
+            <Text style={modalStyles.linkText}>View Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 440,
+    backgroundColor: '#002A5C',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#004080',
+    padding: 20,
+  },
+  title: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  button: {
+    backgroundColor: '#25D366',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  buttonText: {
+    color: '#001F3F',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8 as unknown as number,
+  },
+  linkText: {
+    color: '#25D366',
+    marginLeft: 6,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -6,7 +6,8 @@ import {
   ScrollView, 
   TouchableOpacity,
   Switch,
-  Alert 
+  Alert,
+  Platform 
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,13 +18,14 @@ import {
   Download, 
   Upload, 
   Shield,
-  ChevronRight 
+  ChevronRight,
+  CalendarClock 
 } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
 export default function SettingsScreen() {
-  const { settings, updateSettings, clearAllData, t } = useExpenseStore();
+  const { settings, updateSettings, clearAllData, clearDailyData, generateCSV, t } = useExpenseStore();
 
   const handleLanguageToggle = () => {
     const newLanguage = settings.language === 'en' ? 'hi' : 'en';
@@ -57,11 +59,23 @@ export default function SettingsScreen() {
   };
 
   const handleBackup = () => {
-    Alert.alert(
-      'Backup Data',
-      'Backup functionality would save your data to a local file.',
-      [{ text: 'OK' }]
-    );
+    try {
+      const csv = generateCSV();
+      if (Platform.OS === 'web') {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'heesaabee-backup.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+        Alert.alert('Backup', 'CSV downloaded');
+      } else {
+        router.push({ pathname: '/export', params: { t: Date.now().toString() } });
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to create backup');
+    }
   };
 
   const handleRestore = () => {
@@ -78,6 +92,26 @@ export default function SettingsScreen() {
       title: t.language,
       subtitle: settings.language === 'en' ? 'English' : 'हिंदी',
       onPress: handleLanguageToggle,
+      showChevron: true,
+    },
+    {
+      icon: CalendarClock,
+      title: t.clearDailyData ?? 'Clear Daily Data',
+      subtitle: t.clearDailyDataSubtitle ?? "Delete today's entries only",
+      onPress: () => {
+        Alert.alert(
+          t.clearDailyData ?? 'Clear Daily Data',
+          t.confirmClearDaily ?? "Are you sure? This will delete today's entries and cannot be undone.",
+          [
+            { text: t.cancel ?? 'Cancel', style: 'cancel' },
+            { text: t.backupFirst ?? 'Backup CSV', onPress: handleBackup },
+            { text: t.yes ?? 'Yes', style: 'destructive', onPress: async () => {
+              const ok = await clearDailyData();
+              Alert.alert(ok ? (t.success ?? 'Success') : (t.error ?? 'Error'), ok ? (t.clearedDaily ?? "Today's entries cleared") : (t.failed ?? 'Operation failed'));
+            }},
+          ]
+        );
+      },
       showChevron: true,
     },
     {

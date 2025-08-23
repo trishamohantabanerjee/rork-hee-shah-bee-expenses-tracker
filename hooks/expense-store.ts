@@ -201,6 +201,33 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     }
   }, []);
 
+  const clearDailyData = useCallback(async (isoDate?: string) => {
+    try {
+      const target = isoDate ?? new Date().toISOString().split('T')[0];
+      const filtered = expenses.filter(e => e.date !== target);
+      setExpenses(filtered);
+      await AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(filtered));
+      return true;
+    } catch (error) {
+      console.error('Error clearing daily data:', error);
+      return false;
+    }
+  }, [expenses]);
+
+  const generateCSV = useCallback(() => {
+    const header = 'id,createdAt,date,category,amount,notes';
+    const rows = expenses.map(e => [
+      e.id,
+      e.createdAt,
+      e.date,
+      e.category,
+      e.amount.toString(),
+      (e.notes ?? '').replace(/"/g, '""'),
+    ]);
+    const csv = [header, ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    return csv;
+  }, [expenses]);
+
   const getCurrentMonthExpenses = useCallback(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -250,10 +277,12 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     updateBudget,
     updateSettings,
     clearAllData,
+    clearDailyData,
+    generateCSV,
     getCurrentMonthExpenses,
     getTotalMonthlyExpenses,
     getRemainingBudget,
     getExpensesByCategory,
     markSplashAsSeen,
-  }), [expenses, budget, settings, isLoading, hasSeenSplash, t, draft, addExpense, updateDraft, clearDraft, updateBudget, updateSettings, clearAllData, getCurrentMonthExpenses, getTotalMonthlyExpenses, getRemainingBudget, getExpensesByCategory, markSplashAsSeen]);
+  }), [expenses, budget, settings, isLoading, hasSeenSplash, t, draft, addExpense, updateDraft, clearDraft, updateBudget, updateSettings, clearAllData, clearDailyData, generateCSV, getCurrentMonthExpenses, getTotalMonthlyExpenses, getRemainingBudget, getExpensesByCategory, markSplashAsSeen]);
 });
