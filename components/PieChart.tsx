@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { Colors, CategoryColors } from '@/constants/colors';
 
@@ -14,7 +14,7 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
 
   const chartSize = useMemo(() => {
     if (size) return size;
-    if (width >= 1200) return 420;
+    if (width >= 1200) return 440;
     if (width >= 1024) return 360;
     if (width >= 768) return 320;
     return Math.min(width * 0.86, 280);
@@ -23,12 +23,12 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
   const total = useMemo(() => Object.values(data).reduce((sum, value) => sum + value, 0), [data]);
 
   const baseFont = width >= 1200 ? 18 : width >= 1024 ? 16 : width >= 768 ? 15 : 14;
-  const desiredInnerRadius = baseFont * 3.2;
+  const desiredInnerRadius = Math.ceil(baseFont * (Platform.OS === 'web' ? 3.6 : 3.4));
 
   let computedStroke = Math.floor(
-    chartSize * (width >= 1200 ? 0.18 : width >= 1024 ? 0.17 : width >= 768 ? 0.16 : 0.13)
+    chartSize * (width >= 1200 ? 0.18 : width >= 1024 ? 0.17 : width >= 768 ? 0.16 : 0.135)
   );
-  computedStroke = Math.max(10, Math.min(width >= 1024 ? 36 : 28, computedStroke));
+  computedStroke = Math.max(10, Math.min(width >= 1024 ? 40 : 30, computedStroke));
 
   const innerRadius = chartSize / 2 - computedStroke;
   if (innerRadius < desiredInnerRadius) {
@@ -54,7 +54,7 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
   }
 
   let currentPortion = 0;
-  const segments = entries
+  const positiveSegments = entries
     .filter(([, amount]) => amount > 0)
     .map(([category, amount]) => {
       const color = CategoryColors[category as keyof typeof CategoryColors] || CategoryColors.Others;
@@ -66,12 +66,18 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
       return { category, amount, percentage, strokeDasharray, strokeDashoffset, color };
     });
 
+  const zeroSegments = entries
+    .filter(([, amount]) => amount === 0)
+    .map(([category]) => category);
+
+  const epsilon = circumference * 0.005;
+
   const innerDiameter = chartSize - 2 * computedStroke;
   const labelMaxWidth = Math.max(0, innerDiameter - 16);
 
   const legendTextSize = width >= 1200 ? 17 : width >= 1024 ? 16 : width >= 768 ? 15 : 14;
-  const legendRowGap = width >= 1200 ? 12 : width >= 1024 ? 10 : width >= 768 ? 10 : 8;
-  const legendColGap = width >= 1200 ? 20 : width >= 1024 ? 18 : width >= 768 ? 16 : 12;
+  const legendRowGap = width >= 1200 ? 14 : width >= 1024 ? 12 : width >= 768 ? 10 : 8;
+  const legendColGap = width >= 1200 ? 22 : width >= 1024 ? 18 : width >= 768 ? 16 : 12;
 
   return (
     <View style={[styles.container, { width: chartSize }]} testID="piechart-container">
@@ -85,10 +91,10 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
               stroke={Colors.border}
               strokeWidth={computedStroke}
               fill="transparent"
-              opacity={0.4}
+              opacity={0.35}
               transform={`rotate(-90)`}
             />
-            {segments.map((segment) => (
+            {positiveSegments.map((segment) => (
               <Circle
                 key={segment.category}
                 r={finalRadius}
@@ -101,6 +107,24 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
                 transform={`rotate(-90)`}
               />
             ))}
+            {zeroSegments.map((category, idx) => {
+              const color = CategoryColors[category as keyof typeof CategoryColors] || CategoryColors.Others;
+              const offset = -(circumference * (idx / Math.max(1, zeroSegments.length)));
+              return (
+                <Circle
+                  key={`zero-${category}`}
+                  r={finalRadius}
+                  stroke={color}
+                  strokeWidth={computedStroke}
+                  fill="transparent"
+                  opacity={0.3}
+                  strokeDasharray={`${epsilon} ${circumference}`}
+                  strokeDashoffset={offset}
+                  strokeLinecap="butt"
+                  transform={`rotate(-90)`}
+                />
+              );
+            })}
           </G>
         </Svg>
 
@@ -113,7 +137,7 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
         </View>
       </View>
 
-      <View style={[styles.legend, { marginTop: 16 }]} testID="piechart-legend">
+      <View style={[styles.legend, { marginTop: width >= 1024 ? 20 : 16 }]} testID="piechart-legend">
         {entries.map(([category, amount]) => {
           const color = CategoryColors[category as keyof typeof CategoryColors] || CategoryColors.Others;
           const isZero = amount === 0;
