@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 // import * as Localization from 'expo-localization';
 import type { AppSettings, Budget, Expense, CategoryType } from '@/types/expense';
@@ -286,7 +286,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     return categoryTotals;
   }, [getCurrentMonthExpenses]);
 
-  return useMemo(() => ({
+  return {
     expenses,
     budget,
     settings,
@@ -307,5 +307,5 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     getRemainingBudget,
     getExpensesByCategory,
     markSplashAsSeen,
-  }), [expenses, budget, settings, isLoading, hasSeenSplash, t, draft, addExpense, updateDraft, clearDraft, updateBudget, updateSettings, clearAllData, clearDailyData, generateCSV, getCurrentMonthExpenses, getTotalMonthlyExpenses, getRemainingBudget, getExpensesByCategory, markSplashAsSeen]);
+  };
 });
