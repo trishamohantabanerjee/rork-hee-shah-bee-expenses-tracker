@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  Platform 
+  Platform,
+  Linking 
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -87,6 +88,8 @@ export default function SettingsScreen() {
     );
   };
 
+  const supportEmail = 'support-heesaabee@beindiya.online';
+
   const settingsItems = [
     {
       icon: Globe,
@@ -129,6 +132,25 @@ export default function SettingsScreen() {
       title: t.privacyPolicy,
       subtitle: 'View privacy policy',
       onPress: () => router.push('/privacy'),
+      showChevron: true,
+    },
+    {
+      icon: Shield,
+      title: 'Contact Support',
+      subtitle: supportEmail,
+      onPress: async () => {
+        try {
+          const url = `mailto:${supportEmail}`;
+          const can = await Linking.canOpenURL(url);
+          if (can) {
+            await Linking.openURL(url);
+          } else {
+            Alert.alert('Email', supportEmail);
+          }
+        } catch (e) {
+          Alert.alert('Error', 'Unable to open email client');
+        }
+      },
       showChevron: true,
     },
     {
@@ -239,6 +261,9 @@ export default function SettingsScreen() {
             <Text style={styles.description}>
               A simple and secure expense tracker that keeps your data private.
             </Text>
+            <TouchableOpacity onPress={() => Linking.openURL(`mailto:${supportEmail}`)} activeOpacity={0.7}>
+              <Text style={styles.supportEmail}>{supportEmail}</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -341,5 +366,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 20,
+  },
+  supportEmail: {
+    marginTop: 8,
+    color: Colors.primary,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

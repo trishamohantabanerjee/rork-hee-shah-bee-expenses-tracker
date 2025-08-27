@@ -25,7 +25,7 @@ export default function PrivacyPolicyScreen() {
             {'\n\n'}For GDPR (EU users): You have rights to access, delete, or port your data—contact support.
             {'\n\n'}For CCPA (US users): Opt-out of data sales (none occur).
             {'\n\n'}No tracking or ads. By using, you consent to local storage only.
-            {'\n\n'}For questions: support@heesaabee.com
+            {'\n\n'}For questions: support-heesaabee@beindiya.online
             {'\n\n'}Updated: August 2025.
           </Text>
         </ScrollView>

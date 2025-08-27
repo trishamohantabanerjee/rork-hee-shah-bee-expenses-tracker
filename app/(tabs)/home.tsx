@@ -30,6 +30,8 @@ export default function HomeTab() {
     budget,
     t,
     expenses,
+    hasViewedPrivacyLink,
+    markPrivacyLinkViewed,
   } = useExpenseStore();
 
   const totalExpenses = getTotalMonthlyExpenses();
@@ -90,6 +92,8 @@ export default function HomeTab() {
       setQuickValues(prev => ({ ...prev, [category]: '' }));
     }, 600);
   };
+
+  const [policyVisible, setPolicyVisible] = useState<boolean>(false);
 
   return (
     <View style={styles.container}>
@@ -169,6 +173,17 @@ export default function HomeTab() {
           <View style={styles.chartContainer}>
             <PieChart data={categoryData} size={width >= 1024 ? Math.min(width * 0.35, 360) : width >= 768 ? Math.min(width * 0.5, 320) : Math.min(width * 0.86, 280)} />
           </View>
+          {!hasViewedPrivacyLink && (
+            <View style={styles.privacyLinkWrap}>
+              <TouchableOpacity
+                onPress={() => setPolicyVisible(true)}
+                activeOpacity={0.7}
+                testID="home-privacy-inline-link"
+              >
+                <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
         
         <TouchableOpacity 
@@ -182,6 +197,36 @@ export default function HomeTab() {
       </SafeAreaView>
 
       <PrivacyGate />
+
+      <Modal
+        visible={policyVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {}}
+      >
+        <View style={policyStyles.overlay}>
+          <View style={policyStyles.sheet}>
+            <ScrollView contentContainerStyle={policyStyles.content} showsVerticalScrollIndicator={true}>
+              <Text style={policyStyles.title}>Privacy Policy</Text>
+              <Text style={policyStyles.text}>
+                HeeSaaBee does not share your data with third parties. Your expense data stays on your device. We only collect minimal, anonymized diagnostics if you explicitly opt-in later. You may export or delete all data at any time in Settings. For questions, contact support-heesaabee@beindiya.online.
+              </Text>
+              <Text style={policyStyles.text}>Updated: August 2025</Text>
+            </ScrollView>
+            <TouchableOpacity
+              style={policyStyles.agreeBtn}
+              onPress={async () => {
+                await markPrivacyLinkViewed();
+                setPolicyVisible(false);
+              }}
+              activeOpacity={0.85}
+              testID="home-privacy-inline-agree"
+            >
+              <Text style={policyStyles.agreeText}>I Agree</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -430,4 +475,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
+  privacyLinkWrap: {
+    paddingTop: 6,
+    paddingBottom: 24,
+    alignItems: 'center',
+  },
+  privacyLinkText: {
+    color: '#25D366',
+    fontSize: 12,
+    opacity: 0.9,
+  },
+});
+
+const policyStyles = StyleSheet.create({
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'flex-end' },
+  sheet: { width: '100%', maxHeight: '80%', backgroundColor: '#002A5C', borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 1, borderColor: '#004080' },
+  content: { padding: 20 },
+  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginBottom: 12, textAlign: 'center' },
+  text: { color: '#D0D8E8', fontSize: 14, lineHeight: 20, marginBottom: 12 },
+  agreeBtn: { backgroundColor: '#25D366', paddingVertical: 14, alignItems: 'center' },
+  agreeText: { color: '#001F3F', fontSize: 16, fontWeight: '700' },
 });

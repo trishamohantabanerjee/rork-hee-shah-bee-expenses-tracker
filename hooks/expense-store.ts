@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   BUDGET: 'hee_shah_bee_budget',
   SETTINGS: 'hee_shah_bee_settings',
   DRAFT: 'hee_shah_bee_expense_draft',
+  PRIVACY_LINK: 'heesaabee_has_viewed_privacy_link',
 } as const;
 
 type ExpenseDraft = {
@@ -33,6 +34,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   const [hasSeenSplash, setHasSeenSplash] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
+  const [hasViewedPrivacyLink, setHasViewedPrivacyLink] = useState<boolean>(false);
 
   const t = translations[settings.language];
 
@@ -42,12 +44,13 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const loadData = async () => {
     try {
-      const [expensesData, budgetData, settingsData, splashData, draftData] = await Promise.all([
+      const [expensesData, budgetData, settingsData, splashData, draftData, privacyLinkFlag] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.EXPENSES),
         AsyncStorage.getItem(STORAGE_KEYS.BUDGET),
         AsyncStorage.getItem(STORAGE_KEYS.SETTINGS),
         AsyncStorage.getItem('hee_shah_bee_splash'),
         AsyncStorage.getItem(STORAGE_KEYS.DRAFT),
+        AsyncStorage.getItem(STORAGE_KEYS.PRIVACY_LINK),
       ]);
 
       if (expensesData) {
@@ -95,6 +98,12 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
         const initialDraft: ExpenseDraft = { amount: '', category: 'Food', date: today, notes: '' };
         setDraft(initialDraft);
         await AsyncStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(initialDraft));
+      }
+
+      if (privacyLinkFlag) {
+        setHasViewedPrivacyLink(privacyLinkFlag === '1');
+      } else {
+        setHasViewedPrivacyLink(false);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -286,6 +295,17 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     return categoryTotals;
   }, [getCurrentMonthExpenses]);
 
+  const markPrivacyLinkViewed = useCallback(async () => {
+    try {
+      setHasViewedPrivacyLink(true);
+      await AsyncStorage.setItem(STORAGE_KEYS.PRIVACY_LINK, '1');
+      return true;
+    } catch (error) {
+      console.error('Error marking privacy link viewed:', error);
+      return false;
+    }
+  }, []);
+
   return {
     expenses,
     budget,
@@ -307,5 +327,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     getRemainingBudget,
     getExpensesByCategory,
     markSplashAsSeen,
+    hasViewedPrivacyLink,
+    markPrivacyLinkViewed,
   };
 });
