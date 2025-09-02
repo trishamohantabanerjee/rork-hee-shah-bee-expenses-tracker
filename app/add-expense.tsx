@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -6,8 +6,7 @@ import {
   TextInput, 
   TouchableOpacity, 
   ScrollView, 
-  Alert,
-  Platform 
+  Alert 
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,14 +21,17 @@ import {
   ShoppingBag,
   Heart,
   GraduationCap,
-  MoreHorizontal
+  MoreHorizontal,
+  Minus,
+  CreditCard,
+  IndianRupee
 } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 import type { CategoryType, PaymentType } from '@/types/expense';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const categoryIcons = {
+const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
   Food: Utensils,
   Transport: Car,
   Utilities: Zap,
@@ -38,49 +40,63 @@ const categoryIcons = {
   Healthcare: Heart,
   Education: GraduationCap,
   Others: MoreHorizontal,
+  Subtract: Minus,
+  AutopayDeduction: CreditCard,
+  LoanEMI: IndianRupee,
 };
 
 const paymentTypes: PaymentType[] = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
 
 export default function AddExpenseScreen() {
-  const { addExpense, t, draft, updateDraft, clearDraft } = useExpenseStore();
-  const [amount, setAmount] = useState<string>(draft?.amount ?? '');
-  const [category, setCategory] = useState<CategoryType>(draft?.category ?? 'Food');
-  const [date, setDate] = useState<string>(draft?.date ?? new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState<string>(draft?.notes ?? '');
-  const [paymentType, setPaymentType] = useState<PaymentType>(draft?.paymentType ?? 'Cash');
-  const [isLoading, setIsLoading] = useState(false);
+  const { addExpense, t } = useExpenseStore();
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, paymentType: PaymentType, notes: string}>>(() => {
+    const initial: Record<CategoryType, {amount: string, paymentType: PaymentType, notes: string}> = {} as any;
+    (Object.keys(categoryIcons) as CategoryType[]).forEach(cat => {
+      initial[cat] = { amount: '', paymentType: 'Cash', notes: '' };
+    });
+    return initial;
+  });
 
-  useEffect(() => {
-    updateDraft({ amount, category, date, notes, paymentType });
-  }, [amount, category, date, notes, paymentType]);
-
-  const sanitizeNumeric = (text: string) => text.replace(/[^0-9.]/g, '');
+  const sanitizeNumeric = (text: string) => text.replace(/[^0-9]/g, '');
 
   const handleConfirmAdd = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+    const expensesToAdd: { category: CategoryType; amount: number; paymentType: PaymentType; notes: string }[] = [];
+    (Object.keys(categoryData) as CategoryType[]).forEach(cat => {
+      const { amount, paymentType, notes } = categoryData[cat];
+      const numAmount = parseFloat(amount);
+      if (numAmount > 0) {
+        expensesToAdd.push({ category: cat, amount: numAmount, paymentType, notes });
+      }
+    });
+
+    if (expensesToAdd.length === 0) {
+      Alert.alert('Error', 'Please enter at least one amount');
       return;
     }
 
     setIsLoading(true);
-    const success = await addExpense({
-      amount: parseFloat(amount),
-      category,
-      date,
-      notes: notes.trim(),
-      paymentType,
-    });
+    let success = true;
+    for (const exp of expensesToAdd) {
+      const res = await addExpense({
+        amount: exp.category === 'Subtract' || exp.category === 'AutopayDeduction' || exp.category === 'LoanEMI' ? -exp.amount : exp.amount,
+        category: exp.category,
+        date,
+        notes: exp.notes.trim(),
+        paymentType: exp.paymentType,
+      });
+      if (!res) success = false;
+    }
     setIsLoading(false);
 
     if (success) {
-      await clearDraft();
       Alert.alert('Success', t.expenseAdded, [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } else {
-      Alert.alert('Error', 'Failed to add expense');
+      Alert.alert('Error', 'Some expenses failed to add');
     }
   };
 
@@ -95,6 +111,13 @@ export default function AddExpenseScreen() {
       const isoDate = selectedDate.toISOString().split('T')[0];
       setDate(isoDate);
     }
+  };
+
+  const updateCategoryData = (category: CategoryType, field: 'amount' | 'paymentType' | 'notes', value: string) => {
+    setCategoryData(prev => ({
+      ...prev,
+      [category]: { ...prev[category], [field]: value }
+    }));
   };
 
   return (
@@ -114,126 +137,103 @@ export default function AddExpenseScreen() {
       
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t.amount}</Text>
-              <View style={styles.amountContainer}>
-                <Text style={styles.currencySymbol}>₹</Text>
-                <TextInput
-                  style={styles.amountInput}
-                  value={amount}
-                  onChangeText={(txt) => setAmount(sanitizeNumeric(txt))}
-                  placeholder="0"
-                  placeholderTextColor={Colors.textSecondary}
-                  keyboardType="numeric"
+          <View style={styles.dateContainer}>
+            <Text style={styles.label}>{t.date}</Text>
+            <View style={styles.datePicker}>
+              <Calendar size={20} color={Colors.textSecondary} />
+              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+                <Text style={styles.dateText}>{new Date(date).toLocaleDateString()}</Text>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={new Date(date)}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                  maximumDate={new Date()}
                 />
-              </View>
+              )}
             </View>
+          </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t.category}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-                <View style={styles.categoryContainer}>
-                  {Object.entries(categoryIcons).map(([cat, Icon]) => (
-                    <TouchableOpacity
-                      key={cat}
-                      style={[
-                        styles.categoryButton,
-                        category === (cat as CategoryType) && styles.categoryButtonActive
-                      ]}
-                      onPress={() => setCategory(cat as CategoryType)}
-                    >
-                      <Icon 
-                        size={24} 
-                        color={category === (cat as CategoryType) ? Colors.background : Colors.text} 
+          <View style={styles.grid}>
+            {(Object.keys(categoryIcons) as CategoryType[]).map((category) => {
+              const IconComponent = categoryIcons[category];
+              const { amount, paymentType, notes } = categoryData[category];
+              return (
+                <View key={category} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.iconContainer}>
+                      <IconComponent size={20} color={Colors.primary} />
+                    </View>
+                    <Text style={styles.categoryName}>{t.categories[category]}</Text>
+                  </View>
+                  
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Amount</Text>
+                    <View style={styles.amountContainer}>
+                      <Text style={styles.currencySymbol}>₹</Text>
+                      <TextInput
+                        style={styles.amountInput}
+                        value={amount}
+                        onChangeText={(txt) => updateCategoryData(category, 'amount', sanitizeNumeric(txt))}
+                        placeholder="0"
+                        placeholderTextColor={Colors.textSecondary}
+                        keyboardType="numeric"
                       />
-                      <Text style={[
-                        styles.categoryText,
-                        category === (cat as CategoryType) && styles.categoryTextActive
-                      ]}>
-                        {t.categories[cat as keyof typeof t.categories]}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Payment Type</Text>
+                    <View style={styles.paymentContainer}>
+                      {paymentTypes.map((type) => (
+                        <TouchableOpacity
+                          key={type}
+                          style={[
+                            styles.paymentOption,
+                            paymentType === type && styles.paymentOptionActive
+                          ]}
+                          onPress={() => updateCategoryData(category, 'paymentType', type)}
+                        >
+                          <Text style={[
+                            styles.paymentText,
+                            paymentType === type && styles.paymentTextActive
+                          ]}>
+                            {type}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Notes</Text>
+                    <TextInput
+                      style={styles.notesInput}
+                      value={notes}
+                      onChangeText={(txt) => updateCategoryData(category, 'notes', txt)}
+                      placeholder="Optional notes..."
+                      placeholderTextColor={Colors.textSecondary}
+                      multiline
+                      numberOfLines={2}
+                      textAlignVertical="top"
+                    />
+                  </View>
                 </View>
-              </ScrollView>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Payment Type</Text>
-              <View style={styles.paymentContainer}>
-                {paymentTypes.map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.paymentOption,
-                      paymentType === type && styles.paymentOptionActive
-                    ]}
-                    onPress={() => setPaymentType(type)}
-                  >
-                    <Text style={[
-                      styles.paymentText,
-                      paymentType === type && styles.paymentTextActive
-                    ]}>
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t.date}</Text>
-              <View style={styles.dateContainer}>
-                <Calendar size={20} color={Colors.textSecondary} />
-                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                  <Text style={styles.dateText}>{new Date(date).toLocaleDateString()}</Text>
-                </TouchableOpacity>
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={new Date(date)}
-                    mode="date"
-                    display="default"
-                    onChange={onDateChange}
-                    maximumDate={new Date()}
-                  />
-                )}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t.notes}</Text>
-              <TextInput
-                style={styles.notesInput}
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="Optional notes..."
-                placeholderTextColor={Colors.textSecondary}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-              />
-            </View>
+              );
+            })}
           </View>
         </ScrollView>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.cancelButton} 
-            onPress={() => router.back()}
-          >
-            <Text style={styles.cancelButtonText}>{t.cancel}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]} 
-            onPress={handleConfirmAdd}
-            disabled={isLoading}
-          >
-            <Save size={20} color={Colors.background} />
-            <Text style={styles.saveButtonText}>{t.save}</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]} 
+          onPress={handleConfirmAdd}
+          disabled={isLoading}
+        >
+          <Save size={20} color={Colors.background} />
+          <Text style={styles.saveButtonText}>{t.save}</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     </View>
   );
@@ -251,11 +251,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  form: {
-    paddingTop: 20,
-  },
-  inputGroup: {
-    marginBottom: 24,
+  dateContainer: {
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
@@ -263,85 +260,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 8,
   },
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 16,
-  },
-  currencySymbol: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.primary,
-    marginRight: 8,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.text,
-    paddingVertical: 16,
-  },
-  categoryScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-  },
-  categoryContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  categoryButton: {
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    minWidth: 80,
-  },
-  categoryButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  categoryText: {
-    fontSize: 12,
-    color: Colors.text,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  categoryTextActive: {
-    color: Colors.background,
-    fontWeight: '600',
-  },
-  paymentContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  paymentOption: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-  },
-  paymentOptionActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  paymentText: {
-    fontSize: 14,
-    color: Colors.text,
-  },
-  paymentTextActive: {
-    color: Colors.background,
-    fontWeight: '600',
-  },
-  dateContainer: {
+  datePicker: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.card,
@@ -359,45 +278,115 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginLeft: 12,
   },
-  notesInput: {
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  card: {
+    width: '48%',
     backgroundColor: Colors.card,
     borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: `${Colors.primary}20`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  categoryName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    flex: 1,
+  },
+  inputGroup: {
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+  },
+  currencySymbol: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.primary,
+    marginRight: 4,
+  },
+  amountInput: {
+    flex: 1,
     fontSize: 16,
     color: Colors.text,
-    minHeight: 80,
+    paddingVertical: 8,
   },
-  buttonContainer: {
+  paymentContainer: {
     flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    gap: 4,
   },
-  cancelButton: {
+  paymentOption: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: Colors.card,
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: Colors.background,
     borderWidth: 1,
     borderColor: Colors.border,
     alignItems: 'center',
   },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  paymentOptionActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  paymentText: {
+    fontSize: 10,
     color: Colors.text,
   },
+  paymentTextActive: {
+    color: Colors.background,
+    fontWeight: '600',
+  },
+  notesInput: {
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: Colors.text,
+    minHeight: 60,
+  },
   saveButton: {
-    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    marginHorizontal: 20,
+    marginBottom: 20,
     paddingVertical: 16,
     borderRadius: 12,
-    backgroundColor: Colors.primary,
     gap: 8,
   },
   saveButtonDisabled: {
