@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, Platform, Animated, Modal, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal, ExternalLink, Minus, CreditCard, Calendar, Download, Home, Trash2, Shield, ChevronDown } from 'lucide-react-native';
+import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal, ExternalLink, Minus, CreditCard, Calendar, Download, Home as HomeIcon, Trash2, Shield, ChevronDown } from 'lucide-react-native';
 import { Colors, CategoryColors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 import { PieChart } from '@/components/PieChart';
@@ -23,9 +23,10 @@ const categoryIcons: Record<string, React.ComponentType<any>> = {
   Others: MoreHorizontal,
   Subtract: Minus,
   AutopayDeduction: CreditCard,
+  LoanEMI: HomeIcon,
 };
 
-const allCategories = ['Food','Transport','Utilities','Entertainment','Shopping','Healthcare','Education','Others','Subtract','AutopayDeduction'];
+const allCategories = ['Food','Transport','Utilities','Entertainment','Shopping','Healthcare','Education','Others','Subtract','AutopayDeduction','LoanEMI'];
 
 const paymentTypes: PaymentType[] = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
 
@@ -55,13 +56,13 @@ export default function HomeTab() {
   const nextDueEMI = getNextDueEMI();
 
   const [quickValues, setQuickValues] = useState<Record<string, string>>({
-    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '', LoanEMI: '',
   });
   const [quickNotes, setQuickNotes] = useState<Record<string, string>>({
-    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '', LoanEMI: '',
   });
   const [quickPaymentTypes, setQuickPaymentTypes] = useState<Record<string, PaymentType>>({
-    Food: 'Cash', Transport: 'Cash', Utilities: 'Cash', Entertainment: 'Cash', Shopping: 'Cash', Healthcare: 'Cash', Education: 'Cash', Others: 'Cash', Subtract: 'Cash', AutopayDeduction: 'Cash',
+    Food: 'Cash', Transport: 'Cash', Utilities: 'Cash', Entertainment: 'Cash', Shopping: 'Cash', Healthcare: 'Cash', Education: 'Cash', Others: 'Cash', Subtract: 'Cash', AutopayDeduction: 'Cash', LoanEMI: 'Cash',
   });
   const timersRef = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
   const flashesRef = useRef<Record<string, Animated.Value>>({
@@ -75,6 +76,7 @@ export default function HomeTab() {
     Others: new Animated.Value(0),
     Subtract: new Animated.Value(0),
     AutopayDeduction: new Animated.Value(0),
+    LoanEMI: new Animated.Value(0),
   });
   const [focusedCategory, setFocusedCategory] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(draft?.date ?? new Date().toISOString().split('T')[0]);
@@ -101,7 +103,7 @@ export default function HomeTab() {
     timersRef.current[category] = setTimeout(async () => {
       const amount = parseFloat(sanitized);
       if (!isNaN(amount) && amount > 0) {
-        const isNegative = category === 'Subtract' || category === 'AutopayDeduction';
+        const isNegative = category === 'Subtract' || category === 'AutopayDeduction' || category === 'LoanEMI';
         const finalAmount = isNegative ? -amount : amount;
         const success = await addExpense({ 
           amount: finalAmount, 
@@ -136,7 +138,7 @@ export default function HomeTab() {
       if (val.trim() === '') return;
       const amount = parseFloat(val);
       if (!isNaN(amount) && amount > 0) {
-        const isNegative = cat === 'Subtract' || cat === 'AutopayDeduction';
+        const isNegative = cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI';
         const finalAmount = isNegative ? -amount : amount;
         return addExpense({ 
           amount: finalAmount, 
@@ -149,10 +151,10 @@ export default function HomeTab() {
     });
     await Promise.all(promises);
     setQuickValues({
-      Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+      Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '', LoanEMI: '',
     });
     setQuickNotes({
-      Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+      Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '', LoanEMI: '',
     });
     Alert.alert('Success', 'Expenses added successfully');
   };
@@ -168,9 +170,9 @@ export default function HomeTab() {
   }, [expenses]);
 
   const handleExport = async () => {
-    const csv = 'Date,Category,Amount,Notes,PaymentType\n' + expenses.map(e => `${e.date},${e.category},${e.amount},"${e.notes || ''}",${e.paymentType || 'Cash'}`).join('\n');
+    const csv = 'Date,Category,Amount,Notes,PaymentType\n' + expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n');
     await Clipboard.setStringAsync(csv);
-    Alert.alert('Exported', 'CSV copied to clipboard. Paste into Google Sheets.');
+    Alert.alert('Exported', 'Copied in Excel/Sheets compatible format!');
   };
 
   const handleDeleteAll = () => {
@@ -254,15 +256,15 @@ export default function HomeTab() {
                   inputRange: [0, 1],
                   outputRange: ['rgba(37,211,102,0)', 'rgba(37,211,102,0.25)'],
                 });
-                const isLastRow = cat === 'Subtract' || cat === 'AutopayDeduction';
-                const gridItemWidth = isLastRow ? '48%' : '48%';
+                const isLastRow = cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI';
+                const gridItemWidth = isLastRow ? '31%' : '48%';
                 return (
                   <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth, marginBottom: isLastRow ? 0 : 16 }]}>
                     <View style={styles.quickHeader}>
                       <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat as keyof typeof CategoryColors] + '20' }]}>
                         <Icon size={18} color={CategoryColors[cat as keyof typeof CategoryColors]} />
                       </View>
-                      <Text style={styles.quickLabel}>{cat === 'AutopayDeduction' ? 'Autopay Deduction' : cat}</Text>
+                      <Text style={styles.quickLabel}>{cat === 'AutopayDeduction' ? 'Autopay Deduction' : cat === 'LoanEMI' ? 'Loan EMI' : cat}</Text>
                       <TouchableOpacity 
                         style={styles.paymentSelector}
                         onPress={() => {
@@ -379,7 +381,7 @@ export default function HomeTab() {
         
         <View style={styles.footer}>
           <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/(tabs)/home')} accessibilityRole="button" accessibilityLabel="Home">
-            <Home size={20} color={Colors.primary} />
+            <HomeIcon size={20} color={Colors.primary} />
             <Text style={styles.footerText}>Home</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.footerButton} onPress={handleDeleteAll} accessibilityRole="button" accessibilityLabel="Delete All Data">

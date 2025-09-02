@@ -21,7 +21,7 @@ export interface AppSettings {
   appLockEnabled?: boolean;
 }
 
-export type CategoryType = 'Food' | 'Transport' | 'Utilities' | 'Entertainment' | 'Shopping' | 'Healthcare' | 'Education' | 'Others' | 'Subtract' | 'AutopayDeduction';
+export type CategoryType = 'Food' | 'Transport' | 'Utilities' | 'Entertainment' | 'Shopping' | 'Healthcare' | 'Education' | 'Others' | 'Subtract' | 'AutopayDeduction' | 'LoanEMI';
 
 export type PaymentType = 'UPI' | 'Debit Card' | 'Credit Card' | 'Cash';
 

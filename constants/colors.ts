@@ -21,4 +21,5 @@ export const CategoryColors = {
   Others: '#F7DC6F',
   Subtract: '#FF6B6B',
   AutopayDeduction: '#FF6B6B',
+  LoanEMI: '#FF6B6B',
 } as const;

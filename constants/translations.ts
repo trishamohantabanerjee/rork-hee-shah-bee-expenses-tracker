@@ -57,6 +57,7 @@ export const translations = {
       Others: 'Others',
       Subtract: 'Subtract',
       AutopayDeduction: 'Autopay Deduction',
+      LoanEMI: 'Loan EMI',
     },
   },
   hi: {
@@ -117,6 +118,7 @@ export const translations = {
       Others: 'अन्य',
       Subtract: 'घटाएं',
       AutopayDeduction: 'ऑटोपे कटौती',
+      LoanEMI: 'लोन ईएमआई',
     },
   },
 } as const;
