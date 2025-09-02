@@ -1,16 +1,17 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, Platform, Animated, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, Platform, Animated, Modal, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal, ExternalLink } from 'lucide-react-native';
+import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal, ExternalLink, Minus, CreditCard, Calendar, Download, Home, Trash2, Shield } from 'lucide-react-native';
 import { Colors, CategoryColors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 import { PieChart } from '@/components/PieChart';
 import type { CategoryType } from '@/types/expense';
+import * as Clipboard from 'expo-clipboard';
 
 const { width } = Dimensions.get('window');
 
-const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
+const categoryIcons: Record<string, React.ComponentType<any>> = {
   Food: Utensils,
   Transport: Car,
   Utilities: Zap,
@@ -19,7 +20,11 @@ const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
   Healthcare: Heart,
   Education: GraduationCap,
   Others: MoreHorizontal,
+  Subtract: Minus,
+  AutopayDeduction: CreditCard,
 };
+
+const allCategories = ['Food','Transport','Utilities','Entertainment','Shopping','Healthcare','Education','Others','Subtract','AutopayDeduction'];
 
 export default function HomeTab() {
   const { 
@@ -32,6 +37,7 @@ export default function HomeTab() {
     expenses,
     hasViewedPrivacyLink,
     markPrivacyLinkViewed,
+    clearAllData,
   } = useExpenseStore();
 
   const totalExpenses = getTotalMonthlyExpenses();
@@ -39,12 +45,11 @@ export default function HomeTab() {
   const categoryData = useMemo(() => getExpensesByCategory(), [expenses]);
   const isOverBudget = remainingBudget !== null && remainingBudget < 0;
 
-  const allCategories: CategoryType[] = ['Food','Transport','Utilities','Entertainment','Shopping','Healthcare','Education','Others'];
-  const [quickValues, setQuickValues] = useState<Record<CategoryType, string>>({
-    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '',
+  const [quickValues, setQuickValues] = useState<Record<string, string>>({
+    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
   });
-  const timersRef = useRef<Partial<Record<CategoryType, ReturnType<typeof setTimeout>>>>({});
-  const flashesRef = useRef<Record<CategoryType, Animated.Value>>({
+  const timersRef = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
+  const flashesRef = useRef<Record<string, Animated.Value>>({
     Food: new Animated.Value(0),
     Transport: new Animated.Value(0),
     Utilities: new Animated.Value(0),
@@ -53,10 +58,13 @@ export default function HomeTab() {
     Healthcare: new Animated.Value(0),
     Education: new Animated.Value(0),
     Others: new Animated.Value(0),
+    Subtract: new Animated.Value(0),
+    AutopayDeduction: new Animated.Value(0),
   });
-  const [focusedCategory, setFocusedCategory] = useState<CategoryType | null>(null);
+  const [focusedCategory, setFocusedCategory] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  const triggerFlash = (category: CategoryType) => {
+  const triggerFlash = (category: string) => {
     const v = flashesRef.current[category];
     v.setValue(0);
     Animated.sequence([
@@ -65,8 +73,10 @@ export default function HomeTab() {
     ]).start();
   };
 
-  const onQuickChange = async (category: CategoryType, text: string) => {
-    const sanitized = text.replace(/[^0-9.]/g, '');
+  const sanitizeNumeric = (text: string) => text.replace(/[^0-9]/g, '');
+
+  const onQuickChange = (category: string, text: string) => {
+    const sanitized = sanitizeNumeric(text);
     setQuickValues(prev => ({ ...prev, [category]: sanitized }));
 
     const existing = timersRef.current[category];
@@ -75,8 +85,9 @@ export default function HomeTab() {
     timersRef.current[category] = setTimeout(async () => {
       const amount = parseFloat(sanitized);
       if (!isNaN(amount) && amount > 0) {
-        const today = new Date().toISOString().split('T')[0];
-        const success = await addExpense({ amount, category, date: today, notes: '' });
+        const isNegative = category === 'Subtract' || category === 'AutopayDeduction';
+        const finalAmount = isNegative ? -amount : amount;
+        const success = await addExpense({ amount: finalAmount, category: category as CategoryType, date: selectedDate, notes: '' });
         if (success) {
           if (Platform.OS !== 'web') {
             try {
@@ -91,6 +102,53 @@ export default function HomeTab() {
       }
       setQuickValues(prev => ({ ...prev, [category]: '' }));
     }, 600);
+  };
+
+  const hasAnyValue = Object.values(quickValues).some(v => v.trim() !== '');
+
+  const handleAddExpense = async () => {
+    if (!hasAnyValue) return;
+    const promises = allCategories.map(async (cat) => {
+      const val = quickValues[cat];
+      if (val.trim() === '') return;
+      const amount = parseFloat(val);
+      if (!isNaN(amount) && amount > 0) {
+        const isNegative = cat === 'Subtract' || cat === 'AutopayDeduction';
+        const finalAmount = isNegative ? -amount : amount;
+        return addExpense({ amount: finalAmount, category: cat as CategoryType, date: selectedDate, notes: '' });
+      }
+    });
+    await Promise.all(promises);
+    setQuickValues({
+      Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+    });
+    Alert.alert('Success', 'Expenses added successfully');
+  };
+
+  const dailyExpenses = useMemo(() => {
+    const grouped: Record<string, { total: number; items: typeof expenses }> = {};
+    expenses.forEach(exp => {
+      if (!grouped[exp.date]) grouped[exp.date] = { total: 0, items: [] };
+      grouped[exp.date].total += exp.amount;
+      grouped[exp.date].items.push(exp);
+    });
+    return Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a));
+  }, [expenses]);
+
+  const handleExport = async () => {
+    const csv = 'Date,Category,Amount,Notes\n' + expenses.map(e => `${e.date},${e.category},${e.amount},"${e.notes || ''}"`).join('\n');
+    await Clipboard.setStringAsync(csv);
+    Alert.alert('Exported', 'CSV copied to clipboard. Paste into Google Sheets.');
+  };
+
+  const handleDeleteAll = () => {
+    Alert.alert('Delete All Data', 'Are you sure? This will delete all expenses and cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        await clearAllData();
+        Alert.alert('Deleted', 'All data cleared.');
+      }},
+    ]);
   };
 
   const [policyVisible, setPolicyVisible] = useState<boolean>(false);
@@ -125,6 +183,18 @@ export default function HomeTab() {
             )}
           </View>
 
+          <View style={styles.datePickerContainer}>
+            <Calendar size={20} color={Colors.textSecondary} />
+            <TextInput
+              style={styles.dateInput}
+              value={selectedDate}
+              onChangeText={setSelectedDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={Colors.textSecondary}
+              maxLength={10}
+            />
+          </View>
+
           <View style={styles.quickAddContainer}>
             <Text style={styles.sectionTitle}>Quick Add</Text>
             <View style={styles.quickGrid}>
@@ -134,14 +204,15 @@ export default function HomeTab() {
                   inputRange: [0, 1],
                   outputRange: ['rgba(37,211,102,0)', 'rgba(37,211,102,0.25)'],
                 });
-                const gridItemWidth: string = '48%';
+                const isLastRow = cat === 'Subtract' || cat === 'AutopayDeduction';
+                const gridItemWidth = isLastRow ? '48%' : '48%';
                 return (
-                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth }]}> 
+                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth, marginBottom: isLastRow ? 0 : 16 }]}> 
                     <View style={styles.quickHeader}>
-                      <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat] + '20' }]}>
-                        <Icon size={18} color={CategoryColors[cat]} />
+                      <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat as keyof typeof CategoryColors] + '20' }]}>
+                        <Icon size={18} color={CategoryColors[cat as keyof typeof CategoryColors]} />
                       </View>
-                      <Text style={styles.quickLabel}>{t.categories[cat]}</Text>
+                      <Text style={styles.quickLabel}>{cat === 'AutopayDeduction' ? 'Autopay Deduction' : cat}</Text>
                     </View>
                     <View style={[
                       styles.inputRow,
@@ -162,23 +233,61 @@ export default function HomeTab() {
                         onBlur={() => setFocusedCategory(null)}
                         selectionColor="#25D366"
                         underlineColorAndroid="transparent"
+                        accessibilityLabel={`Enter amount for ${cat}`}
                       />
                     </View>
                   </Animated.View>
                 );
               })}
             </View>
+            <TouchableOpacity 
+              style={[styles.addButton, !hasAnyValue && styles.addButtonDisabled]} 
+              onPress={handleAddExpense}
+              disabled={!hasAnyValue}
+              accessibilityRole="button"
+              accessibilityLabel="Add Expenses"
+            >
+              <Plus size={20} color={Colors.background} />
+              <Text style={styles.addButtonText}>Add Expense</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.chartContainer}>
             <PieChart data={categoryData} size={width >= 1024 ? Math.min(width * 0.35, 360) : width >= 768 ? Math.min(width * 0.5, 320) : Math.min(width * 0.86, 280)} />
           </View>
+
+          <View style={styles.dailyExpensesContainer}>
+            <Text style={styles.sectionTitle}>Daily Expenses</Text>
+            {dailyExpenses.map(([date, { total, items }]) => (
+              <View key={date} style={styles.dailyItem}>
+                <View style={styles.dailyHeader}>
+                  <Text style={styles.dailyDate}>{new Date(date).toLocaleDateString()}</Text>
+                  <Text style={[styles.dailyTotal, total >= 0 ? styles.positive : styles.negative]}>
+                    {total >= 0 ? '▲' : '▼'} ₹{Math.abs(total).toLocaleString()}
+                  </Text>
+                </View>
+                {items.map(item => (
+                  <Text key={item.id} style={styles.dailyDetail}>
+                    {item.category}: ₹{item.amount.toLocaleString()}
+                  </Text>
+                ))}
+              </View>
+            ))}
+          </View>
+
+          <TouchableOpacity style={styles.exportButton} onPress={handleExport} accessibilityRole="button" accessibilityLabel="Export to Google Sheets">
+            <Download size={20} color={Colors.primary} />
+            <Text style={styles.exportButtonText}>Copy for Google Sheets</Text>
+          </TouchableOpacity>
+
           {!hasViewedPrivacyLink && (
             <View style={styles.privacyLinkWrap}>
               <TouchableOpacity
                 onPress={() => setPolicyVisible(true)}
                 activeOpacity={0.7}
                 testID="home-privacy-inline-link"
+                accessibilityRole="button"
+                accessibilityLabel="View Privacy Policy"
               >
                 <Text style={styles.privacyLinkText}>Privacy Policy</Text>
               </TouchableOpacity>
@@ -186,14 +295,20 @@ export default function HomeTab() {
           )}
         </ScrollView>
         
-        <TouchableOpacity 
-          style={styles.fab} 
-          onPress={() => router.push('/add-expense')}
-          activeOpacity={0.8}
-          testID="home-add-expense"
-        >
-          <Plus size={28} color="#FFFFFF" strokeWidth={2} />
-        </TouchableOpacity>
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/(tabs)/home')} accessibilityRole="button" accessibilityLabel="Home">
+            <Home size={20} color={Colors.primary} />
+            <Text style={styles.footerText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.footerButton} onPress={handleDeleteAll} accessibilityRole="button" accessibilityLabel="Delete All Data">
+            <Trash2 size={20} color={Colors.error} />
+            <Text style={styles.footerText}>Delete All</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/privacy')} accessibilityRole="button" accessibilityLabel="Privacy Policy">
+            <Shield size={20} color={Colors.primary} />
+            <Text style={styles.footerText}>Privacy</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
 
       <PrivacyGate />
@@ -209,7 +324,7 @@ export default function HomeTab() {
             <ScrollView contentContainerStyle={policyStyles.content} showsVerticalScrollIndicator={true}>
               <Text style={policyStyles.title}>Privacy Policy</Text>
               <Text style={policyStyles.text}>
-                HeeSaaBee does not share your data with third parties. Your expense data stays on your device. We only collect minimal, anonymized diagnostics if you explicitly opt-in later. You may export or delete all data at any time in Settings. For questions, contact support-heesaabee@beindiya.online.
+                HeeSaaBee does not share your data with third parties. Your expense data stays on your device. We only collect minimal, anonymized diagnostics if you explicitly opt-in later. You may export or delete all data at any time. For questions, contact support-heesaabee@beindiya.online.
               </Text>
               <Text style={policyStyles.text}>Updated: August 2025</Text>
             </ScrollView>
@@ -221,6 +336,8 @@ export default function HomeTab() {
               }}
               activeOpacity={0.85}
               testID="home-privacy-inline-agree"
+              accessibilityRole="button"
+              accessibilityLabel="Agree to Privacy Policy"
             >
               <Text style={policyStyles.agreeText}>I Agree</Text>
             </TouchableOpacity>
@@ -254,10 +371,10 @@ const PrivacyGate: React.FC = React.memo(() => {
       <View style={modalStyles.overlay}>
         <View style={modalStyles.card}>
           <Text style={modalStyles.title}>Please review and agree to our Privacy Policy to continue.</Text>
-          <TouchableOpacity style={modalStyles.button} onPress={onAgree} activeOpacity={0.8} testID="privacy-agree">
+          <TouchableOpacity style={modalStyles.button} onPress={onAgree} activeOpacity={0.8} testID="privacy-agree" accessibilityRole="button" accessibilityLabel="Agree">
             <Text style={modalStyles.buttonText}>{t.agree}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={modalStyles.linkRow} onPress={() => router.push('/privacy')} activeOpacity={0.7}>
+          <TouchableOpacity style={modalStyles.linkRow} onPress={() => router.push('/privacy')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="View Privacy Policy">
             <ExternalLink size={16} color={Colors.primary} />
             <Text style={modalStyles.linkText}>View Privacy Policy</Text>
           </TouchableOpacity>
@@ -373,6 +490,23 @@ const styles = StyleSheet.create({
   overBudgetText: {
     color: '#FF6B6B',
   },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#002A5C',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#004080',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 24,
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginLeft: 12,
+  },
   quickAddContainer: {
     marginBottom: 24,
   },
@@ -453,27 +587,83 @@ const styles = StyleSheet.create({
     outlineStyle: 'none',
     outlineWidth: 0,
   } as any,
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginTop: 12,
+    gap: 8,
+  },
+  addButtonDisabled: {
+    opacity: 0.5,
+  },
+  addButtonText: {
+    color: '#001F3F',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   chartContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 8,
-    marginBottom: 100,
+    marginBottom: 24,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#25D366',
+  dailyExpensesContainer: {
+    marginBottom: 24,
+  },
+  dailyItem: {
+    backgroundColor: '#002A5C',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#004080',
+  },
+  dailyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dailyDate: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  dailyTotal: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  positive: {
+    color: '#25D366',
+  },
+  negative: {
+    color: '#FF6B6B',
+  },
+  dailyDetail: {
+    fontSize: 14,
+    color: '#B0B0B0',
+    marginLeft: 16,
+  },
+  exportButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 8,
-    shadowColor: '#25D366',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    backgroundColor: '#002A5C',
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#004080',
+    gap: 8,
+  },
+  exportButtonText: {
+    color: '#25D366',
+    fontSize: 16,
+    fontWeight: '600',
   },
   privacyLinkWrap: {
     paddingTop: 6,
@@ -484,6 +674,24 @@ const styles = StyleSheet.create({
     color: '#25D366',
     fontSize: 12,
     opacity: 0.9,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#002A5C',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#004080',
+  },
+  footerButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    marginTop: 4,
   },
 });
 

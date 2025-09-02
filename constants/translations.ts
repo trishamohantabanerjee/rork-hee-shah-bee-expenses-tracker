@@ -55,6 +55,8 @@ export const translations = {
       Healthcare: 'Healthcare',
       Education: 'Education',
       Others: 'Others',
+      Subtract: 'Subtract',
+      AutopayDeduction: 'Autopay Deduction',
     },
   },
   hi: {
@@ -113,6 +115,8 @@ export const translations = {
       Healthcare: 'स्वास्थ्य सेवा',
       Education: 'शिक्षा',
       Others: 'अन्य',
+      Subtract: 'घटाएं',
+      AutopayDeduction: 'ऑटोपे कटौती',
     },
   },
 } as const;

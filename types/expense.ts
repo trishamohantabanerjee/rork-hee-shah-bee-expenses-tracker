@@ -20,4 +20,4 @@ export interface AppSettings {
   appLockEnabled?: boolean;
 }
 
-export type CategoryType = 'Food' | 'Transport' | 'Utilities' | 'Entertainment' | 'Shopping' | 'Healthcare' | 'Education' | 'Others';
+export type CategoryType = 'Food' | 'Transport' | 'Utilities' | 'Entertainment' | 'Shopping' | 'Healthcare' | 'Education' | 'Others' | 'Subtract' | 'AutopayDeduction';

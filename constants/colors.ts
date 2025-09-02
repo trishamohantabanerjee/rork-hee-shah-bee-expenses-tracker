@@ -19,4 +19,6 @@ export const CategoryColors = {
   Healthcare: '#DDA0DD',
   Education: '#98D8C8',
   Others: '#F7DC6F',
+  Subtract: '#FF6B6B',
+  AutopayDeduction: '#FF6B6B',
 } as const;

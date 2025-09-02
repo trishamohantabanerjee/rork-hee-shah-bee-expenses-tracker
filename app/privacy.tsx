@@ -25,6 +25,10 @@ export default function PrivacyPolicyScreen() {
             {'\n\n'}For GDPR (EU users): You have rights to access, delete, or port your data—contact support.
             {'\n\n'}For CCPA (US users): Opt-out of data sales (none occur).
             {'\n\n'}No tracking or ads. By using, you consent to local storage only.
+            {'\n\n'}No login, sign-in, or personal identifiers are required or stored.
+            {'\n\n'}Users can delete their data at any time ("Delete All Data").
+            {'\n\n'}"Copy Expenses for Sheets" is user's responsibility; no data is sent outside the browser/app.
+            {'\n\n'}"Autopay Deduction" is for logging detected autopayments only; no banking integrations or third-party sharing.
             {'\n\n'}For questions: support-heesaabee@beindiya.online
             {'\n\n'}Updated: August 2025.
           </Text>
