@@ -125,7 +125,6 @@ export default function HomeTab() {
         }
       }
       setQuickValues(prev => ({ ...prev, [category]: '' }));
-      setQuickNotes(prev => ({ ...prev, [category]: '' }));
     }, 600);
   };
 
@@ -153,9 +152,7 @@ export default function HomeTab() {
     setQuickValues({
       Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '', LoanEMI: '',
     });
-    setQuickNotes({
-      Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '', LoanEMI: '',
-    });
+    // Keep notes and payment types
     Alert.alert('Success', 'Expenses added successfully');
   };
 
@@ -256,10 +253,9 @@ export default function HomeTab() {
                   inputRange: [0, 1],
                   outputRange: ['rgba(37,211,102,0)', 'rgba(37,211,102,0.25)'],
                 });
-                const isLastRow = cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI';
-                const gridItemWidth = isLastRow ? '31%' : '48%';
+                const isNegative = cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI';
                 return (
-                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth, marginBottom: isLastRow ? 0 : 16 }]}>
+                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash }]}>
                     <View style={styles.quickHeader}>
                       <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat as keyof typeof CategoryColors] + '20' }]}>
                         <Icon size={18} color={CategoryColors[cat as keyof typeof CategoryColors]} />
@@ -272,6 +268,8 @@ export default function HomeTab() {
                           const nextIndex = (paymentTypes.indexOf(current) + 1) % paymentTypes.length;
                           setQuickPaymentTypes(prev => ({ ...prev, [cat]: paymentTypes[nextIndex] }));
                         }}
+                        onLongPress={() => Alert.alert('Tooltip', isNegative ? 'This deducts from total' : 'This adds to total')}
+                        accessibilityLabel={`Change payment type for ${cat}`}
                       >
                         <Text style={styles.paymentText}>{quickPaymentTypes[cat]}</Text>
                         <ChevronDown size={14} color={Colors.textSecondary} />
@@ -323,19 +321,6 @@ export default function HomeTab() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.emiSection}>
-            <Text style={styles.sectionTitle}>Loan EMI</Text>
-            <View style={styles.emiCard}>
-              <Text style={styles.emiTotal}>Monthly EMI: ₹{monthlyEMITotal.toLocaleString()}</Text>
-              {nextDueEMI && (
-                <Text style={styles.emiNext}>Next Due: {new Date(nextDueEMI.dueDate).toLocaleDateString()} - ₹{nextDueEMI.amount.toLocaleString()}</Text>
-              )}
-              <TouchableOpacity style={styles.emiButton} onPress={() => router.push('/emi')}>
-                <Text style={styles.emiButtonText}>Manage EMIs</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           <View style={styles.chartContainer}>
             <PieChart data={categoryData} size={width >= 1024 ? Math.min(width * 0.35, 360) : width >= 768 ? Math.min(width * 0.5, 320) : Math.min(width * 0.86, 280)} />
           </View>
@@ -364,70 +349,14 @@ export default function HomeTab() {
             <Text style={styles.exportButtonText}>Copy for Google Sheets</Text>
           </TouchableOpacity>
 
-          {!hasViewedPrivacyLink && (
-            <View style={styles.privacyLinkWrap}>
-              <TouchableOpacity
-                onPress={() => setPolicyVisible(true)}
-                activeOpacity={0.7}
-                testID="home-privacy-inline-link"
-                accessibilityRole="button"
-                accessibilityLabel="View Privacy Policy"
-              >
-                <Text style={styles.privacyLinkText}>Privacy Policy</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </ScrollView>
-        
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/(tabs)/home')} accessibilityRole="button" accessibilityLabel="Home">
-            <HomeIcon size={20} color={Colors.primary} />
-            <Text style={styles.footerText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.footerButton} onPress={handleDeleteAll} accessibilityRole="button" accessibilityLabel="Delete All Data">
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAll} accessibilityRole="button" accessibilityLabel="Delete All Data">
             <Trash2 size={20} color={Colors.error} />
-            <Text style={styles.footerText}>Delete All</Text>
+            <Text style={styles.deleteButtonText}>Delete All Data</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/privacy')} accessibilityRole="button" accessibilityLabel="Privacy Policy">
-            <Shield size={20} color={Colors.primary} />
-            <Text style={styles.footerText}>Privacy</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </SafeAreaView>
 
       <PrivacyGate />
-
-      <Modal
-        visible={policyVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {}}
-      >
-        <View style={policyStyles.overlay}>
-          <View style={policyStyles.sheet}>
-            <ScrollView contentContainerStyle={policyStyles.content} showsVerticalScrollIndicator={true}>
-              <Text style={policyStyles.title}>Privacy Policy</Text>
-              <Text style={policyStyles.text}>
-                HeeSaaBee does not share your data with third parties. Your expense data stays on your device. We only collect minimal, anonymized diagnostics if you explicitly opt-in later. You may export or delete all data at any time. For questions, contact support-heesaabee@beindiya.online.
-              </Text>
-              <Text style={policyStyles.text}>Updated: August 2025</Text>
-            </ScrollView>
-            <TouchableOpacity
-              style={policyStyles.agreeBtn}
-              onPress={async () => {
-                await markPrivacyLinkViewed();
-                setPolicyVisible(false);
-              }}
-              activeOpacity={0.85}
-              testID="home-privacy-inline-agree"
-              accessibilityRole="button"
-              accessibilityLabel="Agree to Privacy Policy"
-            >
-              <Text style={policyStyles.agreeText}>I Agree</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -607,16 +536,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    paddingVertical: 10,
   },
   quickItem: {
+    width: '31%',
     backgroundColor: '#002A5C',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#004080',
     padding: 12,
-    overflow: 'hidden',
-    height: 160,
     marginBottom: 16,
+    overflow: 'hidden',
+    minHeight: 160,
   },
   quickHeader: {
     flexDirection: 'row',
@@ -714,37 +645,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  emiSection: {
-    marginBottom: 24,
-  },
-  emiCard: {
-    backgroundColor: '#002A5C',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#004080',
-  },
-  emiTotal: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  emiNext: {
-    fontSize: 14,
-    color: '#B0B0B0',
-    marginBottom: 12,
-  },
-  emiButton: {
-    backgroundColor: '#25D366',
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  emiButtonText: {
-    color: '#001F3F',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   chartContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -795,7 +695,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#002A5C',
     borderRadius: 12,
     paddingVertical: 12,
-    marginBottom: 24,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#004080',
     gap: 8,
@@ -805,42 +705,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  privacyLinkWrap: {
-    paddingTop: 6,
-    paddingBottom: 24,
-    alignItems: 'center',
-  },
-  privacyLinkText: {
-    color: '#25D366',
-    fontSize: 12,
-    opacity: 0.9,
-  },
-  footer: {
+  deleteButton: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#002A5C',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#004080',
-  },
-  footerButton: {
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    backgroundColor: '#002A5C',
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#004080',
+    gap: 8,
   },
-  footerText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    marginTop: 4,
+  deleteButtonText: {
+    color: '#FF6B6B',
+    fontSize: 16,
+    fontWeight: '600',
   },
-});
-
-const policyStyles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'flex-end' },
-  sheet: { width: '100%', maxHeight: '80%', backgroundColor: '#002A5C', borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 1, borderColor: '#004080' },
-  content: { padding: 20 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginBottom: 12, textAlign: 'center' },
-  text: { color: '#D0D8E8', fontSize: 14, lineHeight: 20, marginBottom: 12 },
-  agreeBtn: { backgroundColor: '#25D366', paddingVertical: 14, alignItems: 'center' },
-  agreeText: { color: '#001F3F', fontSize: 16, fontWeight: '700' },
 });
