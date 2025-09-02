@@ -39,9 +39,6 @@ export default function HomeTab() {
     budget,
     t,
     expenses,
-    hasViewedPrivacyLink,
-    markPrivacyLinkViewed,
-    clearAllData,
     draft,
     updateDraft,
     getMonthlyEMITotal,
@@ -167,7 +164,9 @@ export default function HomeTab() {
   }, [expenses]);
 
   const handleExport = async () => {
-    const csv = 'Date,Category,Amount,Notes,PaymentType\n' + expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n');
+    const csv = 'Date,Category,Amount,Notes,PaymentType
+' + expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('
+');
     await Clipboard.setStringAsync(csv);
     Alert.alert('Exported', 'Copied in Excel/Sheets compatible format!');
   };
@@ -181,8 +180,6 @@ export default function HomeTab() {
       }},
     ]);
   };
-
-  const [policyVisible, setPolicyVisible] = useState<boolean>(false);
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -258,7 +255,7 @@ export default function HomeTab() {
                 });
                 const isNegative = cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI';
                 return (
-                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: cardWidth }]}>
+                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: cardWidth, minHeight: 160 }]}>
                     <View style={styles.quickHeader}>
                       <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat as keyof typeof CategoryColors] + '20' }]}>
                         <Icon size={18} color={CategoryColors[cat as keyof typeof CategoryColors]} />
@@ -358,99 +355,9 @@ export default function HomeTab() {
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
-
-      <PrivacyGate />
     </View>
   );
 }
-
-const PrivacyGate: React.FC = React.memo(() => {
-  const { settings, updateSettings, t } = useExpenseStore();
-  const [visible, setVisible] = useState<boolean>(!settings.hasAcceptedPrivacy);
-
-  React.useEffect(() => {
-    setVisible(!settings.hasAcceptedPrivacy);
-  }, [settings.hasAcceptedPrivacy]);
-
-  const onAgree = async () => {
-    await updateSettings({ hasAcceptedPrivacy: true });
-    setVisible(false);
-  };
-
-  return (
-    <Modal
-      animationType="fade"
-      transparent
-      visible={visible}
-      onRequestClose={() => {}}
-    >
-      <View style={modalStyles.overlay}>
-        <View style={modalStyles.card}>
-          <Text style={modalStyles.title}>Please review and agree to our Privacy Policy to continue.</Text>
-          <TouchableOpacity style={modalStyles.button} onPress={onAgree} activeOpacity={0.8} testID="privacy-agree" accessibilityRole="button" accessibilityLabel="Agree">
-            <Text style={modalStyles.buttonText}>{t.agree}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={modalStyles.linkRow} onPress={() => router.push('/privacy')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="View Privacy Policy">
-            <ExternalLink size={16} color={Colors.primary} />
-            <Text style={modalStyles.linkText}>View Privacy Policy</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-});
-
-const modalStyles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 440,
-    backgroundColor: '#002A5C',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#004080',
-    padding: 20,
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#25D366',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  buttonText: {
-    color: '#001F3F',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8 as unknown as number,
-  },
-  linkText: {
-    color: '#25D366',
-    marginLeft: 6,
-  },
-});
 
 const styles = StyleSheet.create({
   container: {
@@ -538,7 +445,7 @@ const styles = StyleSheet.create({
   quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     gap: 16,
     paddingVertical: 10,
   },
@@ -550,7 +457,6 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    minHeight: 160,
   },
   quickHeader: {
     flexDirection: 'row',
