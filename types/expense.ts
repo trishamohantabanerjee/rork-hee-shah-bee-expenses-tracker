@@ -4,6 +4,7 @@ export interface Expense {
   category: string;
   date: string;
   notes?: string;
+  paymentType?: PaymentType;
   createdAt: string;
 }
 
@@ -21,3 +22,16 @@ export interface AppSettings {
 }
 
 export type CategoryType = 'Food' | 'Transport' | 'Utilities' | 'Entertainment' | 'Shopping' | 'Healthcare' | 'Education' | 'Others' | 'Subtract' | 'AutopayDeduction';
+
+export type PaymentType = 'UPI' | 'Debit Card' | 'Credit Card' | 'Cash';
+
+export interface LoanEMI {
+  id: string;
+  loanType: string;
+  amount: number;
+  dueDate: string;
+  paymentType: PaymentType;
+  notes?: string;
+  isPaid: boolean;
+  createdAt: string;
+}

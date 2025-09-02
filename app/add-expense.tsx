@@ -26,7 +26,8 @@ import {
 } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
-import type { CategoryType } from '@/types/expense';
+import type { CategoryType, PaymentType } from '@/types/expense';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const categoryIcons = {
   Food: Utensils,
@@ -39,17 +40,23 @@ const categoryIcons = {
   Others: MoreHorizontal,
 };
 
+const paymentTypes: PaymentType[] = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
+
 export default function AddExpenseScreen() {
   const { addExpense, t, draft, updateDraft, clearDraft } = useExpenseStore();
   const [amount, setAmount] = useState<string>(draft?.amount ?? '');
   const [category, setCategory] = useState<CategoryType>(draft?.category ?? 'Food');
   const [date, setDate] = useState<string>(draft?.date ?? new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState<string>(draft?.notes ?? '');
+  const [paymentType, setPaymentType] = useState<PaymentType>(draft?.paymentType ?? 'Cash');
   const [isLoading, setIsLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
-    updateDraft({ amount, category, date, notes });
-  }, [amount, category, date, notes]);
+    updateDraft({ amount, category, date, notes, paymentType });
+  }, [amount, category, date, notes, paymentType]);
+
+  const sanitizeNumeric = (text: string) => text.replace(/[^0-9.]/g, '');
 
   const handleConfirmAdd = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -63,6 +70,7 @@ export default function AddExpenseScreen() {
       category,
       date,
       notes: notes.trim(),
+      paymentType,
     });
     setIsLoading(false);
 
@@ -73,6 +81,19 @@ export default function AddExpenseScreen() {
       ]);
     } else {
       Alert.alert('Error', 'Failed to add expense');
+    }
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const today = new Date();
+      if (selectedDate > today) {
+        Alert.alert('Invalid Date', 'Cannot select future dates.');
+        return;
+      }
+      const isoDate = selectedDate.toISOString().split('T')[0];
+      setDate(isoDate);
     }
   };
 
@@ -101,11 +122,10 @@ export default function AddExpenseScreen() {
                 <TextInput
                   style={styles.amountInput}
                   value={amount}
-                  onChangeText={(txt) => setAmount(txt.replace(/[^0-9.]/g, ''))}
+                  onChangeText={(txt) => setAmount(sanitizeNumeric(txt))}
                   placeholder="0"
                   placeholderTextColor={Colors.textSecondary}
                   keyboardType="numeric"
-                  autoFocus
                 />
               </View>
             </View>
@@ -140,16 +160,44 @@ export default function AddExpenseScreen() {
             </View>
 
             <View style={styles.inputGroup}>
+              <Text style={styles.label}>Payment Type</Text>
+              <View style={styles.paymentContainer}>
+                {paymentTypes.map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.paymentOption,
+                      paymentType === type && styles.paymentOptionActive
+                    ]}
+                    onPress={() => setPaymentType(type)}
+                  >
+                    <Text style={[
+                      styles.paymentText,
+                      paymentType === type && styles.paymentTextActive
+                    ]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.label}>{t.date}</Text>
               <View style={styles.dateContainer}>
                 <Calendar size={20} color={Colors.textSecondary} />
-                <TextInput
-                  style={styles.dateInput}
-                  value={date}
-                  onChangeText={setDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={Colors.textSecondary}
-                />
+                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+                  <Text style={styles.dateText}>{new Date(date).toLocaleDateString()}</Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={new Date(date)}
+                    mode="date"
+                    display="default"
+                    onChange={onDateChange}
+                    maximumDate={new Date()}
+                  />
+                )}
               </View>
             </View>
 
@@ -268,6 +316,31 @@ const styles = StyleSheet.create({
     color: Colors.background,
     fontWeight: '600',
   },
+  paymentContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  paymentOption: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+  },
+  paymentOptionActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  paymentText: {
+    fontSize: 14,
+    color: Colors.text,
+  },
+  paymentTextActive: {
+    color: Colors.background,
+    fontWeight: '600',
+  },
   dateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -277,11 +350,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     paddingHorizontal: 16,
   },
-  dateInput: {
+  dateButton: {
     flex: 1,
+    paddingVertical: 16,
+  },
+  dateText: {
     fontSize: 16,
     color: Colors.text,
-    paddingVertical: 16,
     marginLeft: 12,
   },
   notesInput: {

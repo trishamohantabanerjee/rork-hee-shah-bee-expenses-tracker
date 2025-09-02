@@ -18,6 +18,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="export" options={{ title: "Export CSV" }} />
       <Stack.Screen name="clear-days" options={{ title: "Clear Days" }} />
+      <Stack.Screen name="emi" options={{ title: "Loan EMI" }} />
 
       <Stack.Screen
         name="add-expense"
@@ -124,14 +125,47 @@ export default function RootLayout() {
 
 const lockStyles = StyleSheet.create({
   overlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center', padding: 24,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
   },
   card: {
-    width: '100%', maxWidth: 420, backgroundColor: '#002A5C', borderRadius: 16, borderWidth: 1, borderColor: '#004080', padding: 20,
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#002A5C',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#004080',
+    padding: 20,
   },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
-  subtitle: { color: '#B0B0B0', fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  button: { backgroundColor: '#25D366', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  buttonText: { color: '#001F3F', fontSize: 16, fontWeight: '700' },
+  title: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#B0B0B0',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  button: {
+    backgroundColor: '#25D366',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#001F3F',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });

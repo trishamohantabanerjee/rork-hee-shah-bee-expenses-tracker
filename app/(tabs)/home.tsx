@@ -2,12 +2,13 @@ import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput, Platform, Animated, Modal, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal, ExternalLink, Minus, CreditCard, Calendar, Download, Home, Trash2, Shield } from 'lucide-react-native';
+import { Plus, TrendingUp, TrendingDown, Utensils, Car, Zap, Gamepad2, ShoppingBag, Heart, GraduationCap, MoreHorizontal, ExternalLink, Minus, CreditCard, Calendar, Download, Home, Trash2, Shield, ChevronDown } from 'lucide-react-native';
 import { Colors, CategoryColors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 import { PieChart } from '@/components/PieChart';
-import type { CategoryType } from '@/types/expense';
+import type { CategoryType, PaymentType } from '@/types/expense';
 import * as Clipboard from 'expo-clipboard';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +27,8 @@ const categoryIcons: Record<string, React.ComponentType<any>> = {
 
 const allCategories = ['Food','Transport','Utilities','Entertainment','Shopping','Healthcare','Education','Others','Subtract','AutopayDeduction'];
 
+const paymentTypes: PaymentType[] = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
+
 export default function HomeTab() {
   const { 
     getTotalMonthlyExpenses, 
@@ -38,15 +41,27 @@ export default function HomeTab() {
     hasViewedPrivacyLink,
     markPrivacyLinkViewed,
     clearAllData,
+    draft,
+    updateDraft,
+    getMonthlyEMITotal,
+    getNextDueEMI,
   } = useExpenseStore();
 
   const totalExpenses = getTotalMonthlyExpenses();
   const remainingBudget = getRemainingBudget();
   const categoryData = useMemo(() => getExpensesByCategory(), [expenses]);
   const isOverBudget = remainingBudget !== null && remainingBudget < 0;
+  const monthlyEMITotal = getMonthlyEMITotal();
+  const nextDueEMI = getNextDueEMI();
 
   const [quickValues, setQuickValues] = useState<Record<string, string>>({
     Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+  });
+  const [quickNotes, setQuickNotes] = useState<Record<string, string>>({
+    Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+  });
+  const [quickPaymentTypes, setQuickPaymentTypes] = useState<Record<string, PaymentType>>({
+    Food: 'Cash', Transport: 'Cash', Utilities: 'Cash', Entertainment: 'Cash', Shopping: 'Cash', Healthcare: 'Cash', Education: 'Cash', Others: 'Cash', Subtract: 'Cash', AutopayDeduction: 'Cash',
   });
   const timersRef = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
   const flashesRef = useRef<Record<string, Animated.Value>>({
@@ -62,7 +77,8 @@ export default function HomeTab() {
     AutopayDeduction: new Animated.Value(0),
   });
   const [focusedCategory, setFocusedCategory] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(draft?.date ?? new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const triggerFlash = (category: string) => {
     const v = flashesRef.current[category];
@@ -87,7 +103,13 @@ export default function HomeTab() {
       if (!isNaN(amount) && amount > 0) {
         const isNegative = category === 'Subtract' || category === 'AutopayDeduction';
         const finalAmount = isNegative ? -amount : amount;
-        const success = await addExpense({ amount: finalAmount, category: category as CategoryType, date: selectedDate, notes: '' });
+        const success = await addExpense({ 
+          amount: finalAmount, 
+          category: category as CategoryType, 
+          date: selectedDate, 
+          notes: quickNotes[category] || '', 
+          paymentType: quickPaymentTypes[category] 
+        });
         if (success) {
           if (Platform.OS !== 'web') {
             try {
@@ -101,6 +123,7 @@ export default function HomeTab() {
         }
       }
       setQuickValues(prev => ({ ...prev, [category]: '' }));
+      setQuickNotes(prev => ({ ...prev, [category]: '' }));
     }, 600);
   };
 
@@ -115,11 +138,20 @@ export default function HomeTab() {
       if (!isNaN(amount) && amount > 0) {
         const isNegative = cat === 'Subtract' || cat === 'AutopayDeduction';
         const finalAmount = isNegative ? -amount : amount;
-        return addExpense({ amount: finalAmount, category: cat as CategoryType, date: selectedDate, notes: '' });
+        return addExpense({ 
+          amount: finalAmount, 
+          category: cat as CategoryType, 
+          date: selectedDate, 
+          notes: quickNotes[cat] || '', 
+          paymentType: quickPaymentTypes[cat] 
+        });
       }
     });
     await Promise.all(promises);
     setQuickValues({
+      Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
+    });
+    setQuickNotes({
       Food: '', Transport: '', Utilities: '', Entertainment: '', Shopping: '', Healthcare: '', Education: '', Others: '', Subtract: '', AutopayDeduction: '',
     });
     Alert.alert('Success', 'Expenses added successfully');
@@ -136,7 +168,7 @@ export default function HomeTab() {
   }, [expenses]);
 
   const handleExport = async () => {
-    const csv = 'Date,Category,Amount,Notes\n' + expenses.map(e => `${e.date},${e.category},${e.amount},"${e.notes || ''}"`).join('\n');
+    const csv = 'Date,Category,Amount,Notes,PaymentType\n' + expenses.map(e => `${e.date},${e.category},${e.amount},"${e.notes || ''}",${e.paymentType || 'Cash'}`).join('\n');
     await Clipboard.setStringAsync(csv);
     Alert.alert('Exported', 'CSV copied to clipboard. Paste into Google Sheets.');
   };
@@ -152,6 +184,20 @@ export default function HomeTab() {
   };
 
   const [policyVisible, setPolicyVisible] = useState<boolean>(false);
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const today = new Date();
+      if (selectedDate > today) {
+        Alert.alert('Invalid Date', 'Cannot select future dates.');
+        return;
+      }
+      const isoDate = selectedDate.toISOString().split('T')[0];
+      setSelectedDate(isoDate);
+      updateDraft({ date: isoDate });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -185,14 +231,18 @@ export default function HomeTab() {
 
           <View style={styles.datePickerContainer}>
             <Calendar size={20} color={Colors.textSecondary} />
-            <TextInput
-              style={styles.dateInput}
-              value={selectedDate}
-              onChangeText={setSelectedDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textSecondary}
-              maxLength={10}
-            />
+            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+              <Text style={styles.dateText}>{new Date(selectedDate).toLocaleDateString()}</Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={new Date(selectedDate)}
+                mode="date"
+                display="default"
+                onChange={onDateChange}
+                maximumDate={new Date()}
+              />
+            )}
           </View>
 
           <View style={styles.quickAddContainer}>
@@ -207,12 +257,23 @@ export default function HomeTab() {
                 const isLastRow = cat === 'Subtract' || cat === 'AutopayDeduction';
                 const gridItemWidth = isLastRow ? '48%' : '48%';
                 return (
-                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth, marginBottom: isLastRow ? 0 : 16 }]}> 
+                  <Animated.View key={cat} style={[styles.quickItem, { backgroundColor: flash, width: gridItemWidth, marginBottom: isLastRow ? 0 : 16 }]}>
                     <View style={styles.quickHeader}>
                       <View style={[styles.iconWrap, { backgroundColor: CategoryColors[cat as keyof typeof CategoryColors] + '20' }]}>
                         <Icon size={18} color={CategoryColors[cat as keyof typeof CategoryColors]} />
                       </View>
                       <Text style={styles.quickLabel}>{cat === 'AutopayDeduction' ? 'Autopay Deduction' : cat}</Text>
+                      <TouchableOpacity 
+                        style={styles.paymentSelector}
+                        onPress={() => {
+                          const current = quickPaymentTypes[cat];
+                          const nextIndex = (paymentTypes.indexOf(current) + 1) % paymentTypes.length;
+                          setQuickPaymentTypes(prev => ({ ...prev, [cat]: paymentTypes[nextIndex] }));
+                        }}
+                      >
+                        <Text style={styles.paymentText}>{quickPaymentTypes[cat]}</Text>
+                        <ChevronDown size={14} color={Colors.textSecondary} />
+                      </TouchableOpacity>
                     </View>
                     <View style={[
                       styles.inputRow,
@@ -236,6 +297,14 @@ export default function HomeTab() {
                         accessibilityLabel={`Enter amount for ${cat}`}
                       />
                     </View>
+                    <TextInput
+                      style={styles.notesInput}
+                      value={quickNotes[cat]}
+                      onChangeText={(txt) => setQuickNotes(prev => ({ ...prev, [cat]: txt }))}
+                      placeholder="Notes (optional)"
+                      placeholderTextColor={Colors.textSecondary}
+                      maxLength={100}
+                    />
                   </Animated.View>
                 );
               })}
@@ -250,6 +319,19 @@ export default function HomeTab() {
               <Plus size={20} color={Colors.background} />
               <Text style={styles.addButtonText}>Add Expense</Text>
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.emiSection}>
+            <Text style={styles.sectionTitle}>Loan EMI</Text>
+            <View style={styles.emiCard}>
+              <Text style={styles.emiTotal}>Monthly EMI: ₹{monthlyEMITotal.toLocaleString()}</Text>
+              {nextDueEMI && (
+                <Text style={styles.emiNext}>Next Due: {new Date(nextDueEMI.dueDate).toLocaleDateString()} - ₹{nextDueEMI.amount.toLocaleString()}</Text>
+              )}
+              <TouchableOpacity style={styles.emiButton} onPress={() => router.push('/emi')}>
+                <Text style={styles.emiButtonText}>Manage EMIs</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.chartContainer}>
@@ -268,7 +350,7 @@ export default function HomeTab() {
                 </View>
                 {items.map(item => (
                   <Text key={item.id} style={styles.dailyDetail}>
-                    {item.category}: ₹{item.amount.toLocaleString()}
+                    {item.category}: ₹{item.amount.toLocaleString()} ({item.paymentType || 'Cash'}) - {item.notes || 'No notes'}
                   </Text>
                 ))}
               </View>
@@ -501,8 +583,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 24,
   },
-  dateInput: {
+  dateButton: {
     flex: 1,
+    paddingVertical: 8,
+  },
+  dateText: {
     fontSize: 16,
     color: '#FFFFFF',
     marginLeft: 12,
@@ -528,7 +613,7 @@ const styles = StyleSheet.create({
     borderColor: '#004080',
     padding: 12,
     overflow: 'hidden',
-    height: 120,
+    height: 160,
     marginBottom: 16,
   },
   quickHeader: {
@@ -548,6 +633,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFFFFF',
     flex: 1,
+  },
+  paymentSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#001A33',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  paymentText: {
+    fontSize: 12,
+    color: '#B0B0B0',
+    marginRight: 4,
   },
   inputRow: {
     flexDirection: 'row',
@@ -587,6 +685,15 @@ const styles = StyleSheet.create({
     outlineStyle: 'none',
     outlineWidth: 0,
   } as any,
+  notesInput: {
+    backgroundColor: '#001A33',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 8,
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -603,6 +710,37 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#001F3F',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  emiSection: {
+    marginBottom: 24,
+  },
+  emiCard: {
+    backgroundColor: '#002A5C',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#004080',
+  },
+  emiTotal: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  emiNext: {
+    fontSize: 14,
+    color: '#B0B0B0',
+    marginBottom: 12,
+  },
+  emiButton: {
+    backgroundColor: '#25D366',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  emiButtonText: {
+    color: '#001F3F',
+    fontSize: 14,
     fontWeight: '600',
   },
   chartContainer: {

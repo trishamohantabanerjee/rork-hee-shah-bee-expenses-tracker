@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   chip: { width: '48%', marginBottom: 12, borderRadius: 10, borderWidth: 1, borderColor: '#004080', backgroundColor: '#002A5C', paddingVertical: 12, alignItems: 'center' },
   chipActive: { borderColor: '#25D366', backgroundColor: '#003463' },
   chipText: { color: '#FFFFFF' },
-  chipTextActive: { color: '#25D366', fontWeight: '700' as const },
+  chipTextActive: { color: '#25D366', fontWeight: '700' },
   button: { backgroundColor: '#25D366', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#001F3F', fontSize: 16, fontWeight: '700' },
 });

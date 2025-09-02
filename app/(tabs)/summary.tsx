@@ -22,6 +22,8 @@ import {
   GraduationCap,
   MoreHorizontal,
   Trash2,
+  Minus,
+  CreditCard,
 } from 'lucide-react-native';
 import { useExpenseStore } from '@/hooks/expense-store';
 import { Colors, CategoryColors } from '@/constants/colors';
@@ -36,6 +38,8 @@ const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
   Healthcare: Heart,
   Education: GraduationCap,
   Others: MoreHorizontal,
+  Subtract: Minus,
+  AutopayDeduction: CreditCard,
 };
 
 interface CategoryRowProps {
@@ -106,6 +110,7 @@ export default function SummaryScreen() {
     getTotalMonthlyExpenses,
     clearAllData,
     t,
+    getMonthlyEMITotal,
   } = useExpenseStore();
   
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
@@ -117,6 +122,7 @@ export default function SummaryScreen() {
   const { expenses } = useExpenseStore();
   const categoryTotals = useMemo(() => getExpensesByCategory(), [expenses]);
   const totalExpenses = useMemo(() => getTotalMonthlyExpenses(), [expenses]);
+  const monthlyEMITotal = useMemo(() => getMonthlyEMITotal(), []);
   
   const allCategories: CategoryType[] = [
     'Food',
@@ -127,6 +133,8 @@ export default function SummaryScreen() {
     'Healthcare',
     'Education',
     'Others',
+    'Subtract',
+    'AutopayDeduction',
   ];
 
   React.useEffect(() => {
@@ -249,6 +257,13 @@ export default function SummaryScreen() {
                 <View style={styles.totalContent}>
                   <Text style={styles.totalLabel}>{t.total}</Text>
                   <Text style={styles.totalAmount}>₹{totalExpenses.toLocaleString()}</Text>
+                </View>
+              </View>
+
+              <View style={styles.emiRow}>
+                <View style={styles.emiContent}>
+                  <Text style={styles.emiLabel}>Monthly EMI</Text>
+                  <Text style={styles.emiAmount}>₹{monthlyEMITotal.toLocaleString()}</Text>
                 </View>
               </View>
             </View>
@@ -403,6 +418,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: Colors.primary,
+  },
+  emiRow: {
+    backgroundColor: Colors.error + '10',
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  emiContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  emiLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  emiAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.error,
   },
   fab: {
     position: 'absolute',

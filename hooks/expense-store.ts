@@ -3,7 +3,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 // import * as Localization from 'expo-localization';
-import type { AppSettings, Budget, Expense, CategoryType } from '@/types/expense';
+import type { AppSettings, Budget, Expense, CategoryType, PaymentType, LoanEMI } from '@/types/expense';
 import { translations } from '@/constants/translations';
 import * as SecureStore from 'expo-secure-store';
 
@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   SETTINGS: 'hee_shah_bee_settings',
   DRAFT: 'hee_shah_bee_expense_draft',
   PRIVACY_LINK: 'heesaabee_has_viewed_privacy_link',
+  EMIS: 'hee_shah_bee_emis',
 } as const;
 
 type ExpenseDraft = {
@@ -20,6 +21,7 @@ type ExpenseDraft = {
   category: CategoryType;
   date: string;
   notes: string;
+  paymentType: PaymentType;
 };
 
 export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
@@ -35,6 +37,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
   const [hasViewedPrivacyLink, setHasViewedPrivacyLink] = useState<boolean>(false);
+  const [emis, setEmis] = useState<LoanEMI[]>([]);
 
   const t = translations[settings.language];
 
@@ -44,13 +47,14 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const loadData = async () => {
     try {
-      const [expensesData, budgetData, settingsData, splashData, draftData, privacyLinkFlag] = await Promise.all([
+      const [expensesData, budgetData, settingsData, splashData, draftData, privacyLinkFlag, emisData] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.EXPENSES),
         AsyncStorage.getItem(STORAGE_KEYS.BUDGET),
         AsyncStorage.getItem(STORAGE_KEYS.SETTINGS),
         AsyncStorage.getItem('hee_shah_bee_splash'),
         AsyncStorage.getItem(STORAGE_KEYS.DRAFT),
         AsyncStorage.getItem(STORAGE_KEYS.PRIVACY_LINK),
+        AsyncStorage.getItem(STORAGE_KEYS.EMIS),
       ]);
 
       if (expensesData) {
@@ -95,7 +99,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
         setDraft(JSON.parse(draftData));
       } else {
         const today = new Date().toISOString().split('T')[0];
-        const initialDraft: ExpenseDraft = { amount: '', category: 'Food', date: today, notes: '' };
+        const initialDraft: ExpenseDraft = { amount: '', category: 'Food', date: today, notes: '', paymentType: 'Cash' };
         setDraft(initialDraft);
         await AsyncStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(initialDraft));
       }
@@ -104,6 +108,10 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
         setHasViewedPrivacyLink(privacyLinkFlag === '1');
       } else {
         setHasViewedPrivacyLink(false);
+      }
+
+      if (emisData) {
+        setEmis(JSON.parse(emisData));
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -143,6 +151,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
         category: draft?.category ?? 'Food',
         date: draft?.date ?? new Date().toISOString().split('T')[0],
         notes: draft?.notes ?? '',
+        paymentType: draft?.paymentType ?? 'Cash',
       };
       const nextDraft: ExpenseDraft = { ...current, ...partial };
       setDraft(nextDraft);
@@ -157,7 +166,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   const clearDraft = useCallback(async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const emptyDraft: ExpenseDraft = { amount: '', category: 'Food', date: today, notes: '' };
+      const emptyDraft: ExpenseDraft = { amount: '', category: 'Food', date: today, notes: '', paymentType: 'Cash' };
       setDraft(emptyDraft);
       await AsyncStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(emptyDraft));
       return true;
@@ -223,9 +232,11 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       await Promise.all([
         AsyncStorage.removeItem(STORAGE_KEYS.EXPENSES),
         AsyncStorage.removeItem(STORAGE_KEYS.BUDGET),
+        AsyncStorage.removeItem(STORAGE_KEYS.EMIS),
       ]);
       setExpenses([]);
       setBudget(null);
+      setEmis([]);
       return true;
     } catch (error) {
       console.error('Error clearing data:', error);
@@ -247,7 +258,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   }, [expenses]);
 
   const generateCSV = useCallback(() => {
-    const header = 'id,createdAt,date,category,amount,notes';
+    const header = 'id,createdAt,date,category,amount,notes,paymentType';
     const rows = expenses.map(e => [
       e.id,
       e.createdAt,
@@ -255,6 +266,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       e.category,
       e.amount.toString(),
       (e.notes ?? '').replace(/"/g, '""'),
+      e.paymentType ?? 'Cash',
     ]);
     const csv = [header, ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
     return csv;
@@ -306,6 +318,69 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     }
   }, []);
 
+  const addEMI = useCallback(async (emi: Omit<LoanEMI, 'id' | 'createdAt'>) => {
+    try {
+      const newEMI: LoanEMI = {
+        ...emi,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedEMIs = [...emis, newEMI];
+      setEmis(updatedEMIs);
+      await AsyncStorage.setItem(STORAGE_KEYS.EMIS, JSON.stringify(updatedEMIs));
+      return true;
+    } catch (error) {
+      console.error('Error adding EMI:', error);
+      return false;
+    }
+  }, [emis]);
+
+  const updateEMI = useCallback(async (id: string, updates: Partial<LoanEMI>) => {
+    try {
+      const updatedEMIs = emis.map(emi => emi.id === id ? { ...emi, ...updates } : emi);
+      setEmis(updatedEMIs);
+      await AsyncStorage.setItem(STORAGE_KEYS.EMIS, JSON.stringify(updatedEMIs));
+      return true;
+    } catch (error) {
+      console.error('Error updating EMI:', error);
+      return false;
+    }
+  }, [emis]);
+
+  const deleteEMI = useCallback(async (id: string) => {
+    try {
+      const updatedEMIs = emis.filter(emi => emi.id !== id);
+      setEmis(updatedEMIs);
+      await AsyncStorage.setItem(STORAGE_KEYS.EMIS, JSON.stringify(updatedEMIs));
+      return true;
+    } catch (error) {
+      console.error('Error deleting EMI:', error);
+      return false;
+    }
+  }, [emis]);
+
+  const getMonthlyEMITotal = useCallback(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return emis
+      .filter(emi => {
+        const dueDate = new Date(emi.dueDate);
+        return dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear;
+      })
+      .reduce((total, emi) => total + emi.amount, 0);
+  }, [emis]);
+
+  const getNextDueEMI = useCallback(() => {
+    const now = new Date();
+    const upcoming = emis
+      .filter(emi => new Date(emi.dueDate) >= now && !emi.isPaid)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    return upcoming[0] || null;
+  }, [emis]);
+
   return {
     expenses,
     budget,
@@ -314,6 +389,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     hasSeenSplash,
     t,
     draft,
+    emis,
     addExpense,
     updateDraft,
     clearDraft,
@@ -329,5 +405,10 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     markSplashAsSeen,
     hasViewedPrivacyLink,
     markPrivacyLinkViewed,
+    addEMI,
+    updateEMI,
+    deleteEMI,
+    getMonthlyEMITotal,
+    getNextDueEMI,
   };
 });

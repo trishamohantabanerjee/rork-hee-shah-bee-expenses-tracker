@@ -14,14 +14,17 @@ import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
 export default function BudgetScreen() {
-  const { budget, updateBudget, getTotalMonthlyExpenses, t } = useExpenseStore();
+  const { budget, updateBudget, getTotalMonthlyExpenses, t, getMonthlyEMITotal } = useExpenseStore();
   const [budgetAmount, setBudgetAmount] = useState(budget?.monthly.toString() || '');
   const [isLoading, setIsLoading] = useState(false);
 
   const totalExpenses = getTotalMonthlyExpenses();
+  const monthlyEMITotal = getMonthlyEMITotal();
   const currentBudget = budget?.monthly || 0;
-  const remaining = currentBudget - totalExpenses;
-  const progressPercentage = currentBudget > 0 ? (totalExpenses / currentBudget) * 100 : 0;
+  const remaining = currentBudget - totalExpenses - monthlyEMITotal;
+  const progressPercentage = currentBudget > 0 ? ((totalExpenses + monthlyEMITotal) / currentBudget) * 100 : 0;
+
+  const sanitizeNumeric = (text: string) => text.replace(/[^0-9.]/g, '');
 
   const handleSave = async () => {
     const amount = parseFloat(budgetAmount);
@@ -94,6 +97,10 @@ export default function BudgetScreen() {
                   <Text style={styles.statValue}>₹{totalExpenses.toLocaleString()}</Text>
                 </View>
                 <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>EMI</Text>
+                  <Text style={styles.statValue}>₹{monthlyEMITotal.toLocaleString()}</Text>
+                </View>
+                <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Remaining</Text>
                   <Text style={[
                     styles.statValue,
@@ -113,7 +120,7 @@ export default function BudgetScreen() {
               <TextInput
                 style={styles.amountInput}
                 value={budgetAmount}
-                onChangeText={setBudgetAmount}
+                onChangeText={(txt) => setBudgetAmount(sanitizeNumeric(txt))}
                 placeholder="Enter budget amount"
                 placeholderTextColor={Colors.textSecondary}
                 keyboardType="numeric"

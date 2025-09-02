@@ -13,7 +13,7 @@ import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
 export default function ReportsScreen() {
-  const { expenses, getExpensesByCategory, t } = useExpenseStore();
+  const { expenses, getExpensesByCategory, t, getMonthlyEMITotal } = useExpenseStore();
   const [selectedPeriod, setSelectedPeriod] = useState<'weekly' | 'monthly'>('monthly');
 
   const getFilteredExpenses = () => {
@@ -32,6 +32,7 @@ export default function ReportsScreen() {
   const filteredExpenses = getFilteredExpenses();
   const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const categoryData = getExpensesByCategory();
+  const monthlyEMITotal = getMonthlyEMITotal();
 
   const handleExport = () => {
     Alert.alert(
@@ -118,6 +119,9 @@ export default function ReportsScreen() {
             <Text style={styles.summarySubtext}>
               {filteredExpenses.length} transactions
             </Text>
+            <Text style={styles.emiSummary}>
+              Monthly EMI: ₹{monthlyEMITotal.toLocaleString()}
+            </Text>
           </View>
 
           <View style={styles.chartCard}>
@@ -143,6 +147,7 @@ export default function ReportsScreen() {
                   {expense.notes && (
                     <Text style={styles.expenseNotes}>{expense.notes}</Text>
                   )}
+                  <Text style={styles.expensePayment}>Payment: {expense.paymentType || 'Cash'}</Text>
                 </View>
                 <Text style={styles.expenseAmount}>₹{expense.amount.toLocaleString()}</Text>
               </View>
@@ -232,6 +237,11 @@ const styles = StyleSheet.create({
   summarySubtext: {
     fontSize: 14,
     color: Colors.textSecondary,
+  },
+  emiSummary: {
+    fontSize: 14,
+    color: Colors.error,
+    marginTop: 8,
   },
   chartCard: {
     backgroundColor: Colors.card,
@@ -325,6 +335,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
     fontStyle: 'italic',
+    marginBottom: 2,
+  },
+  expensePayment: {
+    fontSize: 12,
+    color: Colors.textSecondary,
   },
   expenseAmount: {
     fontSize: 16,
