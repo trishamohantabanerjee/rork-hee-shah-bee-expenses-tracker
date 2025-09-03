@@ -54,13 +54,7 @@ import React, { useState } from 'react';
           const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
           const [showDatePicker, setShowDatePicker] = useState(false);
           const [isLoading, setIsLoading] = useState(false);
-          const [paymentTypes, setPaymentTypes] = useState<Record<CategoryType, PaymentType>>(() => {
-            const initial: Record<CategoryType, PaymentType> = {} as any;
-            (Object.keys(categoryIcons) as CategoryType[]).forEach(cat => {
-              initial[cat] = 'Cash';
-            });
-            return initial;
-          });
+          const [globalPaymentType, setGlobalPaymentType] = useState<PaymentType>('Cash');
           const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, notes: string}>>(() => {
             const initial: Record<CategoryType, {amount: string, notes: string}> = {} as any;
             (Object.keys(categoryIcons) as CategoryType[]).forEach(cat => {
@@ -77,7 +71,7 @@ import React, { useState } from 'react';
               const { amount, notes } = categoryData[cat];
               const numAmount = parseFloat(amount);
               if (numAmount > 0) {
-                const finalPaymentType = paymentTypes[cat];
+                const finalPaymentType = globalPaymentType;
                 expensesToAdd.push({ category: cat, amount: cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI' ? -numAmount : numAmount, paymentType: finalPaymentType, notes });
               }
             });
@@ -179,6 +173,22 @@ import React, { useState } from 'react';
                     </View>
                   </View>
 
+                  <View style={styles.paymentTypeContainer}>
+                    <Text style={styles.label}>Payment Type</Text>
+                    <View style={styles.pickerContainer}>
+                      <Picker
+                        selectedValue={globalPaymentType}
+                        onValueChange={(itemValue: PaymentType) => setGlobalPaymentType(itemValue)}
+                        style={styles.picker}
+                        itemStyle={styles.pickerItem}
+                      >
+                        {paymentOptions.map((type) => (
+                          <Picker.Item key={type} label={type} value={type} />
+                        ))}
+                      </Picker>
+                    </View>
+                  </View>
+
                   <View style={styles.gridContainer}>
                     <View style={styles.grid}>
                       {allCategories.map((category) => {
@@ -205,22 +215,6 @@ import React, { useState } from 'react';
                                   placeholderTextColor={Colors.textSecondary}
                                   keyboardType="numeric"
                                 />
-                              </View>
-                            </View>
-
-                            <View style={styles.inputGroup}>
-                              <Text style={styles.inputLabel}>Payment Type</Text>
-                              <View style={styles.pickerContainer}>
-                                <Picker
-                                  selectedValue={paymentTypes[category]}
-                                  onValueChange={(itemValue: PaymentType) => setPaymentTypes(prev => ({ ...prev, [category]: itemValue }))}
-                                  style={styles.picker}
-                                  itemStyle={styles.pickerItem}
-                                >
-                                  {paymentOptions.map((type) => (
-                                    <Picker.Item key={type} label={type} value={type} />
-                                  ))}
-                                </Picker>
                               </View>
                             </View>
 
@@ -296,6 +290,24 @@ import React, { useState } from 'react';
             color: Colors.text,
             marginLeft: 12,
           },
+          paymentTypeContainer: {
+            marginBottom: 20,
+          },
+          pickerContainer: {
+            backgroundColor: Colors.background,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: Colors.border,
+            overflow: 'hidden',
+          },
+          picker: {
+            color: Colors.text,
+            backgroundColor: Colors.background,
+          },
+          pickerItem: {
+            color: Colors.text,
+            backgroundColor: Colors.background,
+          },
           gridContainer: {
             alignItems: 'center',
           },
@@ -364,21 +376,6 @@ import React, { useState } from 'react';
             fontSize: 16,
             color: Colors.text,
             paddingVertical: 8,
-          },
-          pickerContainer: {
-            backgroundColor: Colors.background,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: Colors.border,
-            overflow: 'hidden',
-          },
-          picker: {
-            color: Colors.text,
-            backgroundColor: Colors.background,
-          },
-          pickerItem: {
-            color: Colors.text,
-            backgroundColor: Colors.background,
           },
           notesInput: {
             backgroundColor: Colors.background,
