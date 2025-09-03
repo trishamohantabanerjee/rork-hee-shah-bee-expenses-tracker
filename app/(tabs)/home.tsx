@@ -46,8 +46,7 @@ export default function HomeScreen() {
   const totalAllTime = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   const handleExport = async () => {
-    const csv = `Date,Category,Amount,Notes,PaymentType
-${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n')}`;
+    const csv = `Date,Category,Amount,Notes,PaymentType\n${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n')}`;
     await Clipboard.setStringAsync(csv);
     Alert.alert('Exported', 'Copied in Excel/Sheets compatible format!');
   };
@@ -56,13 +55,16 @@ ${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}
     let message = '';
     switch (type) {
       case 'budget':
-        message = budget ? `Monthly Budget: ₹${budget.monthly.toLocaleString()}\nRemaining: ₹${remainingBudget?.toLocaleString() || '0'}` : 'No budget set. Tap to set one.';
+        message = budget ? `Monthly Budget: ₹${budget.monthly.toLocaleString()}
+Remaining: ₹${remainingBudget?.toLocaleString() || '0'}` : 'No budget set. Tap to set one.';
         break;
       case 'monthly':
-        message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions`;
+        message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}
+${monthlyExpenses.length} transactions`;
         break;
       case 'allTime':
-        message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}\n${expenses.length} total transactions`;
+        message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}
+${expenses.length} total transactions`;
         break;
     }
     Alert.alert('Summary', message);
@@ -168,16 +170,6 @@ ${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}
           >
             <Plus size={24} color="white" />
             <Text style={styles.actionButtonText}>{t.addExpense}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: Colors.card }]}
-            onPress={() => router.push('/budget')}
-          >
-            <Calendar size={24} color={Colors.text} />
-            <Text style={[styles.actionButtonText, { color: Colors.text }]}>
-              {t.budget}
-            </Text>
           </TouchableOpacity>
         </View>
 

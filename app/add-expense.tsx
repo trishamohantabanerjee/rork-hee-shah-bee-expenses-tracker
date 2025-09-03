@@ -93,7 +93,7 @@ import React, { useState } from 'react';
 
         if (success) {
           Alert.alert('Success', t.expenseAdded);
-          // Keep modal open for editing
+          // Keep modal open for editing, amounts remain in boxes
         } else {
           Alert.alert('Error', 'Some expenses failed to add');
         }
@@ -282,6 +282,7 @@ import React, { useState } from 'react';
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         gap: 12,
+        paddingVertical: 10,
       },
       card: {
         width: '48%',
