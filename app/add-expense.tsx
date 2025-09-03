@@ -178,7 +178,7 @@ import React, { useState } from 'react';
                         const IconComponent = categoryIcons[category];
                         const { amount, notes, paymentType } = categoryData[category];
                         return (
-                          <View key={category} style={styles.card}>
+                          <View key={category} style={[styles.card, category === 'Others' ? { alignSelf: 'center' } : null]}>
                             <View style={styles.cardHeader}>
                               <View style={styles.iconContainer}>
                                 <IconComponent size={20} color={Colors.primary} />
@@ -216,13 +216,13 @@ import React, { useState } from 'react';
                             </View>
 
                             <View style={styles.inputGroup}>
-                              <Text style={styles.inputLabel}>Payment Type</Text>
                               <View style={styles.pickerContainer}>
                                 <Picker
                                   selectedValue={paymentType}
                                   onValueChange={(itemValue: PaymentType) => updateCategoryData(category, 'paymentType', itemValue)}
                                   style={styles.picker}
                                   itemStyle={styles.pickerItem}
+                                  testID={`payment-type-picker-${category}`}
                                 >
                                   {paymentOptions.map((type) => (
                                     <Picker.Item key={type} label={type} value={type} />
