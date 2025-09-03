@@ -2,27 +2,39 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Shield } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
 export default function PrivacyPolicyScreen() {
-  const { updateSettings, t } = useExpenseStore();
+  const { updateSettings, t, settings } = useExpenseStore();
 
   const handleAgree = async () => {
     await updateSettings({ hasAcceptedPrivacy: true });
     router.replace('/(tabs)/home');
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          {settings.hasAcceptedPrivacy && (
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <ArrowLeft size={24} color={Colors.text} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.title}>{t.privacyPolicy}</Text>
-          
+        </View>
+        
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <Text style={styles.content}>
             HeeSaaBee collects no personal data. All expenses, including payment types and EMI data, remain local on your device. We only collect minimal, anonymized diagnostics if you explicitly opt-in later. You may export or delete all data at any time. For questions, contact support-heesaabee@beindiya.online.
             {'\n\n'}
-            Under India's DPDP Act 2023, we ensure data minimization and require your consent for any future updates.
+            Under India&apos;s DPDP Act 2023, we ensure data minimization and require your consent for any future updates.
             {'\n\n'}
             For GDPR (EU users): You have rights to access, delete, or port your data—contact support.
             {'\n\n'}
@@ -32,21 +44,24 @@ export default function PrivacyPolicyScreen() {
             {'\n\n'}
             No login, sign-in, or personal identifiers are required or stored.
             {'\n\n'}
-            Users can delete their data at any time ("Delete All Data").
+            Users can delete their data at any time (&quot;Delete All Data&quot;).
             {'\n\n'}
-            "Copy Expenses for Sheets" is user's responsibility; no data is sent outside the browser/app.
+            &quot;Copy Expenses for Sheets&quot; is user&apos;s responsibility; no data is sent outside the browser/app.
             {'\n\n'}
-            "Autopay Deduction" is for logging detected autopayments only; no banking integrations or third-party sharing.
+            &quot;Autopay Deduction&quot; is for logging detected autopayments only; no banking integrations or third-party sharing.
             {'\n\n'}
             For questions: support-heesaabee@beindiya.online
             {'\n\n'}
-            Updated: August 2025.
+            Updated: September 2025.
           </Text>
         </ScrollView>
         
-        <TouchableOpacity style={styles.agreeButton} onPress={handleAgree}>
-          <Text style={styles.agreeButtonText}>{t.agree}</Text>
-        </TouchableOpacity>
+        {!settings.hasAcceptedPrivacy && (
+          <TouchableOpacity style={styles.agreeButton} onPress={handleAgree}>
+            <Shield size={20} color={Colors.background} />
+            <Text style={styles.agreeButtonText}>{t.agree}</Text>
+          </TouchableOpacity>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -60,16 +75,25 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  backButton: {
+    marginRight: 12,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: Colors.text,
-    marginBottom: 20,
-    marginTop: 20,
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
   content: {
     fontSize: 16,
@@ -78,12 +102,15 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   agreeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Colors.primary,
     marginHorizontal: 20,
     marginBottom: 20,
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    gap: 8,
   },
   agreeButtonText: {
     color: Colors.background,
