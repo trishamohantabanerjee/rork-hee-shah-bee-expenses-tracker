@@ -18,7 +18,8 @@ import {
   PieChart as PieChartIcon,
   DollarSign,
   Target,
-  Clock
+  Clock,
+  IndianRupee
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Colors } from '@/constants/colors';
@@ -137,7 +138,7 @@ ${expenses.length} total transactions`;
             activeOpacity={0.7}
           >
             <View style={styles.cardHeader}>
-              <DollarSign size={24} color={Colors.primary} />
+              <IndianRupee size={24} color={Colors.primary} />
               <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>
                 Spent Till Now
               </Text>

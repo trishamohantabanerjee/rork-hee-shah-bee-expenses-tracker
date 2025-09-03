@@ -24,6 +24,7 @@ import {
   Trash2,
   Minus,
   CreditCard,
+  IndianRupee
 } from 'lucide-react-native';
 import { useExpenseStore } from '@/hooks/expense-store';
 import { Colors, CategoryColors } from '@/constants/colors';
@@ -40,6 +41,7 @@ const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
   Others: MoreHorizontal,
   Subtract: Minus,
   AutopayDeduction: CreditCard,
+  LoanEMI: IndianRupee,
 };
 
 interface CategoryRowProps {
@@ -135,6 +137,7 @@ export default function SummaryScreen() {
     'Others',
     'Subtract',
     'AutopayDeduction',
+    'LoanEMI',
   ];
 
   React.useEffect(() => {

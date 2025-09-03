@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Save, Target } from 'lucide-react-native';
+import { Save, Target, IndianRupee } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 

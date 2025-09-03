@@ -8,7 +8,7 @@ import {
   Alert 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarChart3, Download, Calendar } from 'lucide-react-native';
+import { BarChart3, Download, Calendar, IndianRupee } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
@@ -110,7 +110,7 @@ export default function ReportsScreen() {
 
           <View style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <BarChart3 size={24} color={Colors.primary} />
+              <IndianRupee size={24} color={Colors.primary} />
               <Text style={styles.summaryTitle}>
                 {selectedPeriod === 'weekly' ? 'Last 7 Days' : 'Last 30 Days'}
               </Text>
