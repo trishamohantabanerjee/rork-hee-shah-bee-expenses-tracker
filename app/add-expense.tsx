@@ -31,6 +31,7 @@ import React, { useState } from 'react';
     import type { CategoryType, PaymentType } from '@/types/expense';
     import DateTimePicker from '@react-native-community/datetimepicker';
     import { Picker } from '@react-native-picker/picker';
+    import { Platform } from 'react-native';
 
     const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
       Food: Utensils,
@@ -121,6 +122,21 @@ import React, { useState } from 'react';
         }));
       };
 
+      // Reordered categories: Subtract, AutopayDeduction, LoanEMI at the end for center placement in grid
+      const allCategories: CategoryType[] = [
+        'Food',
+        'Transport',
+        'Utilities',
+        'Entertainment',
+        'Shopping',
+        'Healthcare',
+        'Education',
+        'Others',
+        'Subtract',
+        'AutopayDeduction',
+        'LoanEMI',
+      ];
+
       return (
         <View style={styles.container}>
           <Stack.Screen 
@@ -149,7 +165,7 @@ import React, { useState } from 'react';
                     <DateTimePicker
                       value={new Date(date)}
                       mode="date"
-                      display="default"
+                      display={Platform.OS === 'ios' ? 'inline' : 'default'}
                       onChange={onDateChange}
                       maximumDate={new Date()}
                     />
@@ -158,7 +174,7 @@ import React, { useState } from 'react';
               </View>
 
               <View style={styles.grid}>
-                {(Object.keys(categoryIcons) as CategoryType[]).map((category) => {
+                {allCategories.map((category) => {
                   const IconComponent = categoryIcons[category];
                   const { amount, paymentType, notes } = categoryData[category];
                   return (
