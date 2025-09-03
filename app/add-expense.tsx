@@ -30,6 +30,7 @@ import React, { useState } from 'react';
     import { useExpenseStore } from '@/hooks/expense-store';
     import type { CategoryType, PaymentType } from '@/types/expense';
     import DateTimePicker from '@react-native-community/datetimepicker';
+    import { Picker } from '@react-native-picker/picker';
 
     const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
       Food: Utensils,
@@ -185,24 +186,17 @@ import React, { useState } from 'react';
 
                       <View style={styles.inputGroup}>
                         <Text style={styles.inputLabel}>Payment Type</Text>
-                        <View style={styles.paymentContainer}>
-                          {paymentTypes.map((type) => (
-                            <TouchableOpacity
-                              key={type}
-                              style={[
-                                styles.paymentOption,
-                                paymentType === type && styles.paymentOptionActive
-                              ]}
-                              onPress={() => updateCategoryData(category, 'paymentType', type)}
-                            >
-                              <Text style={[
-                                styles.paymentText,
-                                paymentType === type && styles.paymentTextActive
-                              ]}>
-                                {type}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
+                        <View style={styles.pickerContainer}>
+                          <Picker
+                            selectedValue={paymentType}
+                            onValueChange={(itemValue: PaymentType) => updateCategoryData(category, 'paymentType', itemValue)}
+                            style={styles.picker}
+                            itemStyle={styles.pickerItem}
+                          >
+                            {paymentTypes.map((type) => (
+                              <Picker.Item key={type} label={type} value={type} />
+                            ))}
+                          </Picker>
                         </View>
                       </View>
 
@@ -342,30 +336,20 @@ import React, { useState } from 'react';
         color: Colors.text,
         paddingVertical: 8,
       },
-      paymentContainer: {
-        flexDirection: 'row',
-        gap: 4,
-      },
-      paymentOption: {
-        flex: 1,
-        padding: 8,
-        borderRadius: 6,
+      pickerContainer: {
         backgroundColor: Colors.background,
+        borderRadius: 8,
         borderWidth: 1,
         borderColor: Colors.border,
-        alignItems: 'center',
+        overflow: 'hidden',
       },
-      paymentOptionActive: {
-        backgroundColor: Colors.primary,
-        borderColor: Colors.primary,
-      },
-      paymentText: {
-        fontSize: 10,
+      picker: {
         color: Colors.text,
+        backgroundColor: Colors.background,
       },
-      paymentTextActive: {
-        color: Colors.background,
-        fontWeight: '600',
+      pickerItem: {
+        color: Colors.text,
+        backgroundColor: Colors.background,
       },
       notesInput: {
         backgroundColor: Colors.background,
