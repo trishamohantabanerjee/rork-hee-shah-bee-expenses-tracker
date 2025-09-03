@@ -179,66 +179,67 @@ import React, { useState } from 'react';
                     </View>
                   </View>
 
-                  <View style={styles.grid}>
-                    {allCategories.map((category) => {
-                      const IconComponent = categoryIcons[category];
-                      const { amount, notes } = categoryData[category];
-                      return (
-                        <View key={category} style={styles.card}>
-                          <View style={styles.cardHeader}>
-                            <View style={styles.iconContainer}>
-                              <IconComponent size={20} color={Colors.primary} />
+                  <View style={styles.gridContainer}>
+                    <View style={styles.grid}>
+                      {allCategories.map((category) => {
+                        const IconComponent = categoryIcons[category];
+                        const { amount, notes } = categoryData[category];
+                        return (
+                          <View key={category} style={styles.card}>
+                            <View style={styles.cardHeader}>
+                              <View style={styles.iconContainer}>
+                                <IconComponent size={20} color={Colors.primary} />
+                              </View>
+                              <Text style={styles.categoryName}>{t.categories[category]}</Text>
                             </View>
-                            <Text style={styles.categoryName}>{t.categories[category]}</Text>
-                          </View>
-                          
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Amount</Text>
-                            <View style={styles.amountContainer}>
-                              <Text style={styles.currencySymbol}>₹</Text>
+                            
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Amount</Text>
+                              <View style={styles.amountContainer}>
+                                <Text style={styles.currencySymbol}>₹</Text>
+                                <TextInput
+                                  style={styles.amountInput}
+                                  value={amount}
+                                  onChangeText={(txt) => updateCategoryData(category, 'amount', sanitizeNumeric(txt))}
+                                  placeholder="0"
+                                  placeholderTextColor={Colors.textSecondary}
+                                  keyboardType="numeric"
+                                />
+                              </View>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                              <View style={styles.pickerContainer}>
+                                <Picker
+                                  selectedValue={paymentTypes[category]}
+                                  onValueChange={(itemValue: PaymentType) => setPaymentTypes(prev => ({ ...prev, [category]: itemValue }))}
+                                  style={styles.picker}
+                                  itemStyle={styles.pickerItem}
+                                >
+                                  {paymentOptions.map((type) => (
+                                    <Picker.Item key={type} label={type} value={type} />
+                                  ))}
+                                </Picker>
+                              </View>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Notes</Text>
                               <TextInput
-                                style={styles.amountInput}
-                                value={amount}
-                                onChangeText={(txt) => updateCategoryData(category, 'amount', sanitizeNumeric(txt))}
-                                placeholder="0"
+                                style={styles.notesInput}
+                                value={notes}
+                                onChangeText={(txt) => updateCategoryData(category, 'notes', txt)}
+                                placeholder="Optional notes..."
                                 placeholderTextColor={Colors.textSecondary}
-                                keyboardType="numeric"
+                                multiline
+                                numberOfLines={2}
+                                textAlignVertical="top"
                               />
                             </View>
                           </View>
-
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Payment Type</Text>
-                            <View style={styles.pickerContainer}>
-                              <Picker
-                                selectedValue={paymentTypes[category]}
-                                onValueChange={(itemValue: PaymentType) => setPaymentTypes(prev => ({ ...prev, [category]: itemValue }))}
-                                style={styles.picker}
-                                itemStyle={styles.pickerItem}
-                              >
-                                {paymentOptions.map((type) => (
-                                  <Picker.Item key={type} label={type} value={type} />
-                                ))}
-                              </Picker>
-                            </View>
-                          </View>
-
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Notes</Text>
-                            <TextInput
-                              style={styles.notesInput}
-                              value={notes}
-                              onChangeText={(txt) => updateCategoryData(category, 'notes', txt)}
-                              placeholder="Optional notes..."
-                              placeholderTextColor={Colors.textSecondary}
-                              multiline
-                              numberOfLines={2}
-                              textAlignVertical="top"
-                            />
-                          </View>
-                        </View>
-                      );
-                    })}
+                        );
+                      })}
+                    </View>
                   </View>
                 </ScrollView>
 
@@ -294,10 +295,13 @@ import React, { useState } from 'react';
             color: Colors.text,
             marginLeft: 12,
           },
+          gridContainer: {
+            alignItems: 'center',
+          },
           grid: {
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             gap: 12,
             paddingVertical: 10,
           },
