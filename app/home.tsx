@@ -52,12 +52,10 @@ import React from 'react';
         let message = '';
         switch (type) {
           case 'monthly':
-            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}
-${monthlyExpenses.length} transactions`;
+            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions`;
             break;
           case 'allTime':
-            message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}
-${expenses.length} total transactions`;
+            message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}\n${expenses.length} total transactions`;
             break;
         }
         Alert.alert('Summary', message);
