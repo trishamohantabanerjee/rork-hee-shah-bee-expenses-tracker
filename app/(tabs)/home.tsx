@@ -56,16 +56,13 @@ export default function HomeScreen() {
     let message = '';
     switch (type) {
       case 'budget':
-        message = budget ? `Monthly Budget: ₹${budget.monthly.toLocaleString()}
-Remaining: ₹${remainingBudget?.toLocaleString() || '0'}` : 'No budget set. Tap to set one.';
+        message = budget ? `Monthly Budget: ₹${budget.monthly.toLocaleString()}\nRemaining: ₹${remainingBudget?.toLocaleString() || '0'}` : 'No budget set. Tap to set one.';
         break;
       case 'monthly':
-        message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}
-${monthlyExpenses.length} transactions`;
+        message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions`;
         break;
       case 'allTime':
-        message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}
-${expenses.length} total transactions`;
+        message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}\n${expenses.length} total transactions`;
         break;
     }
     Alert.alert('Summary', message);
