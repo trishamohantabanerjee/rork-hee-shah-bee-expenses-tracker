@@ -42,8 +42,7 @@ export default function HomeScreen() {
   const totalAllTime = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   const handleExport = async () => {
-    const csv = 'Date,Category,Amount,Notes,PaymentType\n' +
-      expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n');
+    const csv = `Date,Category,Amount,Notes,PaymentType\n${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n')}`;
     await Clipboard.setStringAsync(csv);
     Alert.alert('Exported', 'Copied in Excel/Sheets compatible format!');
   };
@@ -52,12 +51,10 @@ export default function HomeScreen() {
     let message = '';
     switch (type) {
       case 'monthly':
-        message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}
-${monthlyExpenses.length} transactions`;
+        message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions`;
         break;
       case 'allTime':
-        message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}
-${expenses.length} total transactions`;
+        message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}\n${expenses.length} total transactions`;
         break;
     }
     Alert.alert('Summary', message);
