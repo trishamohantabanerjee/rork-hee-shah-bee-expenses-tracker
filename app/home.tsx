@@ -5,18 +5,14 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
-  Platform
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Plus,
-  TrendingUp,
   Download,
-  Calendar,
   PieChart as PieChartIcon,
-  DollarSign,
   Target,
   Clock,
   IndianRupee
@@ -30,7 +26,6 @@ export default function HomeScreen() {
   const {
     expenses,
     budget,
-    settings,
     getCurrentMonthExpenses,
     getTotalMonthlyExpenses,
     getRemainingBudget,
@@ -47,9 +42,8 @@ export default function HomeScreen() {
   const totalAllTime = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   const handleExport = async () => {
-    const csv = `Date,Category,Amount,Notes,PaymentType
-${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('
-')}`;
+    const csv = 'Date,Category,Amount,Notes,PaymentType\n' +
+      expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n');
     await Clipboard.setStringAsync(csv);
     Alert.alert('Exported', 'Copied in Excel/Sheets compatible format!');
   };
@@ -69,9 +63,7 @@ ${expenses.length} total transactions`;
     Alert.alert('Summary', message);
   };
 
-  const today = new Date().toISOString().split('T')[0];
-  const todayExpenses = expenses.filter(e => e.date === today);
-  const todayTotal = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
