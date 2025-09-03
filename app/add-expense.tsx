@@ -1,37 +1,37 @@
 import React, { useState } from 'react';
-    import { 
-      View, 
-      Text, 
-      StyleSheet, 
-      TextInput, 
-      TouchableOpacity, 
-      ScrollView, 
-      Alert 
-    } from 'react-native';
-    import { router, Stack } from 'expo-router';
-    import { SafeAreaView } from 'react-native-safe-area-context';
-    import { 
-      Save, 
-      X, 
-      Calendar,
-      Utensils,
-      Car,
-      Zap,
-      Gamepad2,
-      ShoppingBag,
-      Heart,
-      GraduationCap,
-      MoreHorizontal,
-      Minus,
-      CreditCard,
-      IndianRupee
-    } from 'lucide-react-native';
-    import { Colors } from '@/constants/colors';
-    import { useExpenseStore } from '@/hooks/expense-store';
-    import type { CategoryType, PaymentType } from '@/types/expense';
-    import DateTimePicker from '@react-native-community/datetimepicker';
-    import { Picker } from '@react-native-picker/picker';
-    import { Platform } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TextInput, 
+  TouchableOpacity, 
+  ScrollView, 
+  Alert,
+  Platform
+} from 'react-native';
+import { router, Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  Save, 
+  X, 
+  Calendar,
+  Utensils,
+  Car,
+  Zap,
+  Gamepad2,
+  ShoppingBag,
+  Heart,
+  GraduationCap,
+  MoreHorizontal,
+  Minus,
+  CreditCard,
+  IndianRupee
+} from 'lucide-react-native';
+import { Colors } from '@/constants/colors';
+import { useExpenseStore } from '@/hooks/expense-store';
+import type { CategoryType, PaymentType } from '@/types/expense';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
 
     const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
       Food: Utensils,
@@ -47,17 +47,18 @@ import React, { useState } from 'react';
       LoanEMI: IndianRupee,
     };
 
-    const paymentTypes: string[] = ['Payment Type', 'UPI', 'Debit Card', 'Credit Card', 'Cash'];
+    const paymentTypes: string[] = ['Pay Type', 'UPI', 'Debit Card', 'Credit Card', 'Cash'];
 
     export default function AddExpenseScreen() {
       const { addExpense, t } = useExpenseStore();
       const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
       const [showDatePicker, setShowDatePicker] = useState(false);
       const [isLoading, setIsLoading] = useState(false);
-      const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, paymentType: string, notes: string}>>(() => {
-        const initial: Record<CategoryType, {amount: string, paymentType: string, notes: string}> = {} as any;
+      const [globalPaymentType, setGlobalPaymentType] = useState<string>('Pay Type');
+      const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, notes: string}>>(() => {
+        const initial: Record<CategoryType, {amount: string, notes: string}> = {} as any;
         (Object.keys(categoryIcons) as CategoryType[]).forEach(cat => {
-          initial[cat] = { amount: '', paymentType: 'Payment Type', notes: '' };
+          initial[cat] = { amount: '', notes: '' };
         });
         return initial;
       });
@@ -67,10 +68,10 @@ import React, { useState } from 'react';
       const handleConfirmAdd = async () => {
         const expensesToAdd: { category: CategoryType; amount: number; paymentType: PaymentType; notes: string }[] = [];
         (Object.keys(categoryData) as CategoryType[]).forEach(cat => {
-          const { amount, paymentType, notes } = categoryData[cat];
+          const { amount, notes } = categoryData[cat];
           const numAmount = parseFloat(amount);
           if (numAmount > 0) {
-            const finalPaymentType: PaymentType = paymentType === 'Payment Type' ? 'Cash' : paymentType as PaymentType;
+            const finalPaymentType: PaymentType = globalPaymentType === 'Pay Type' ? 'Cash' : globalPaymentType as PaymentType;
             expensesToAdd.push({ category: cat, amount: numAmount, paymentType: finalPaymentType, notes });
           }
         });
@@ -115,7 +116,7 @@ import React, { useState } from 'react';
         }
       };
 
-      const updateCategoryData = (category: CategoryType, field: 'amount' | 'paymentType' | 'notes', value: string) => {
+      const updateCategoryData = (category: CategoryType, field: 'amount' | 'notes', value: string) => {
         setCategoryData(prev => ({
           ...prev,
           [category]: { ...prev[category], [field]: value }
@@ -173,10 +174,26 @@ import React, { useState } from 'react';
                 </View>
               </View>
 
+              <View style={styles.paymentContainer}>
+                <Text style={styles.label}>Pay Type</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={globalPaymentType}
+                    onValueChange={(itemValue: string) => setGlobalPaymentType(itemValue)}
+                    style={styles.picker}
+                    itemStyle={styles.pickerItem}
+                  >
+                    {paymentTypes.map((type) => (
+                      <Picker.Item key={type} label={type} value={type} enabled={type !== 'Pay Type'} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
               <View style={styles.grid}>
                 {allCategories.map((category) => {
                   const IconComponent = categoryIcons[category];
-                  const { amount, paymentType, notes } = categoryData[category];
+                  const { amount, notes } = categoryData[category];
                   return (
                     <View key={category} style={styles.card}>
                       <View style={styles.cardHeader}>
@@ -198,22 +215,6 @@ import React, { useState } from 'react';
                             placeholderTextColor={Colors.textSecondary}
                             keyboardType="numeric"
                           />
-                        </View>
-                      </View>
-
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Payment Type</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={paymentType}
-                            onValueChange={(itemValue: string) => updateCategoryData(category, 'paymentType', itemValue)}
-                            style={styles.picker}
-                            itemStyle={styles.pickerItem}
-                          >
-                            {paymentTypes.map((type) => (
-                              <Picker.Item key={type} label={type} value={type} enabled={type !== 'Payment Type'} />
-                            ))}
-                          </Picker>
                         </View>
                       </View>
 
@@ -288,6 +289,24 @@ import React, { useState } from 'react';
         color: Colors.text,
         marginLeft: 12,
       },
+      paymentContainer: {
+        marginBottom: 20,
+      },
+      pickerContainer: {
+        backgroundColor: Colors.card,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        overflow: 'hidden',
+      },
+      picker: {
+        color: Colors.text,
+        backgroundColor: Colors.card,
+      },
+      pickerItem: {
+        color: Colors.text,
+        backgroundColor: Colors.card,
+      },
       grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -352,21 +371,6 @@ import React, { useState } from 'react';
         fontSize: 16,
         color: Colors.text,
         paddingVertical: 8,
-      },
-      pickerContainer: {
-        backgroundColor: Colors.background,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        overflow: 'hidden',
-      },
-      picker: {
-        color: Colors.text,
-        backgroundColor: Colors.background,
-      },
-      pickerItem: {
-        color: Colors.text,
-        backgroundColor: Colors.background,
       },
       notesInput: {
         backgroundColor: Colors.background,
