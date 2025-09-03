@@ -95,7 +95,18 @@ import React, { useState } from 'react';
             setIsLoading(false);
 
             if (success) {
-              Alert.alert('Success', t.expenseAdded);
+              Alert.alert('Success', t.expenseAdded, [
+                { 
+                  text: 'OK', 
+                  onPress: () => {
+                    if (router.canGoBack()) {
+                      router.back();
+                    } else {
+                      router.replace('/(tabs)/home');
+                    }
+                  }
+                }
+              ]);
             } else {
               Alert.alert('Error', 'Some expenses failed to add');
             }
@@ -144,7 +155,13 @@ import React, { useState } from 'react';
                   headerStyle: { backgroundColor: Colors.background },
                   headerTintColor: Colors.text,
                   headerRight: () => (
-                    <TouchableOpacity onPress={() => router.back()}>
+                    <TouchableOpacity onPress={() => {
+                      if (router.canGoBack()) {
+                        router.back();
+                      } else {
+                        router.replace('/(tabs)/home');
+                      }
+                    }}>
                       <X size={24} color={Colors.text} />
                     </TouchableOpacity>
                   ),

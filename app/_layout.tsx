@@ -18,7 +18,6 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="export" options={{ title: "Export CSV" }} />
       <Stack.Screen name="clear-days" options={{ title: "Clear Days" }} />
-      <Stack.Screen name="emi" options={{ title: "Loan EMI" }} />
 
       <Stack.Screen
         name="add-expense"
@@ -63,7 +62,7 @@ const LockGate: React.FC = () => {
         } else {
           setLocked(false);
         }
-      } catch (e) {
+      } catch {
         setLocked(false);
       } finally {
         setAttempted(true);

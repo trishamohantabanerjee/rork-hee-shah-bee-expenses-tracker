@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Save, Target, IndianRupee } from 'lucide-react-native';
+import { Save, Target } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
@@ -46,7 +46,16 @@ export default function BudgetScreen() {
 
     if (success) {
       Alert.alert('Success', t.budgetSet, [
-        { text: 'OK', onPress: () => router.back() }
+        { 
+          text: 'OK', 
+          onPress: () => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)/home');
+            }
+          }
+        }
       ]);
     } else {
       Alert.alert('Error', 'Failed to set budget');
