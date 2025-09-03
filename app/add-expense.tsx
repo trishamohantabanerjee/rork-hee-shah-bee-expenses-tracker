@@ -209,6 +209,7 @@ import React, { useState } from 'react';
                             </View>
 
                             <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Payment Type</Text>
                               <View style={styles.pickerContainer}>
                                 <Picker
                                   selectedValue={paymentTypes[category]}
@@ -302,6 +303,7 @@ import React, { useState } from 'react';
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'center',
+            alignItems: 'center',
             gap: 12,
             paddingVertical: 10,
           },
