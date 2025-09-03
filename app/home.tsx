@@ -60,8 +60,6 @@ import React from 'react';
         Alert.alert('Summary', message);
       };
 
-
-
       return (
         <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
