@@ -54,11 +54,10 @@ import React, { useState } from 'react';
           const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
           const [showDatePicker, setShowDatePicker] = useState(false);
           const [isLoading, setIsLoading] = useState(false);
-          const [globalPaymentType, setGlobalPaymentType] = useState<PaymentType>('Cash');
-          const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, notes: string}>>(() => {
-            const initial: Record<CategoryType, {amount: string, notes: string}> = {} as any;
+          const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, notes: string, paymentType: PaymentType}>>(() => {
+            const initial: Record<CategoryType, {amount: string, notes: string, paymentType: PaymentType}> = {} as any;
             (Object.keys(categoryIcons) as CategoryType[]).forEach(cat => {
-              initial[cat] = { amount: '', notes: '' };
+              initial[cat] = { amount: '', notes: '', paymentType: 'Cash' };
             });
             return initial;
           });
@@ -68,11 +67,11 @@ import React, { useState } from 'react';
           const handleConfirmAdd = async () => {
             const expensesToAdd: { category: CategoryType; amount: number; paymentType: PaymentType; notes: string }[] = [];
             (Object.keys(categoryData) as CategoryType[]).forEach(cat => {
-              const { amount, notes } = categoryData[cat];
+              const { amount, notes, paymentType } = categoryData[cat];
               const numAmount = parseFloat(amount);
               if (numAmount > 0) {
-                const finalPaymentType = globalPaymentType;
-                expensesToAdd.push({ category: cat, amount: cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI' ? -numAmount : numAmount, paymentType: finalPaymentType, notes });
+                const finalAmount = cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI' ? -numAmount : numAmount;
+                expensesToAdd.push({ category: cat, amount: finalAmount, paymentType, notes });
               }
             });
 
@@ -115,7 +114,7 @@ import React, { useState } from 'react';
             }
           };
 
-          const updateCategoryData = (category: CategoryType, field: 'amount' | 'notes', value: string) => {
+          const updateCategoryData = (category: CategoryType, field: 'amount' | 'notes' | 'paymentType', value: string) => {
             setCategoryData(prev => ({
               ...prev,
               [category]: { ...prev[category], [field]: value }
@@ -173,27 +172,11 @@ import React, { useState } from 'react';
                     </View>
                   </View>
 
-                  <View style={styles.paymentTypeContainer}>
-                    <Text style={styles.label}>Payment Type</Text>
-                    <View style={styles.pickerContainer}>
-                      <Picker
-                        selectedValue={globalPaymentType}
-                        onValueChange={(itemValue: PaymentType) => setGlobalPaymentType(itemValue)}
-                        style={styles.picker}
-                        itemStyle={styles.pickerItem}
-                      >
-                        {paymentOptions.map((type) => (
-                          <Picker.Item key={type} label={type} value={type} />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-
                   <View style={styles.gridContainer}>
                     <View style={styles.grid}>
                       {allCategories.map((category) => {
                         const IconComponent = categoryIcons[category];
-                        const { amount, notes } = categoryData[category];
+                        const { amount, notes, paymentType } = categoryData[category];
                         return (
                           <View key={category} style={styles.card}>
                             <View style={styles.cardHeader}>
@@ -230,6 +213,22 @@ import React, { useState } from 'react';
                                 numberOfLines={2}
                                 textAlignVertical="top"
                               />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Payment Type</Text>
+                              <View style={styles.pickerContainer}>
+                                <Picker
+                                  selectedValue={paymentType}
+                                  onValueChange={(itemValue: PaymentType) => updateCategoryData(category, 'paymentType', itemValue)}
+                                  style={styles.picker}
+                                  itemStyle={styles.pickerItem}
+                                >
+                                  {paymentOptions.map((type) => (
+                                    <Picker.Item key={type} label={type} value={type} />
+                                  ))}
+                                </Picker>
+                              </View>
                             </View>
                           </View>
                         );
@@ -289,24 +288,6 @@ import React, { useState } from 'react';
             fontSize: 16,
             color: Colors.text,
             marginLeft: 12,
-          },
-          paymentTypeContainer: {
-            marginBottom: 20,
-          },
-          pickerContainer: {
-            backgroundColor: Colors.background,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: Colors.border,
-            overflow: 'hidden',
-          },
-          picker: {
-            color: Colors.text,
-            backgroundColor: Colors.background,
-          },
-          pickerItem: {
-            color: Colors.text,
-            backgroundColor: Colors.background,
           },
           gridContainer: {
             alignItems: 'center',
@@ -387,6 +368,21 @@ import React, { useState } from 'react';
             fontSize: 14,
             color: Colors.text,
             minHeight: 60,
+          },
+          pickerContainer: {
+            backgroundColor: Colors.background,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: Colors.border,
+            overflow: 'hidden',
+          },
+          picker: {
+            color: Colors.text,
+            backgroundColor: Colors.background,
+          },
+          pickerItem: {
+            color: Colors.text,
+            backgroundColor: Colors.background,
           },
           saveButton: {
             flexDirection: 'row',
