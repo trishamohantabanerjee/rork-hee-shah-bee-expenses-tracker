@@ -46,7 +46,7 @@ import React, { useState } from 'react';
       LoanEMI: IndianRupee,
     };
 
-    const paymentTypes: string[] = ['Select Payment Type', 'UPI', 'Debit Card', 'Credit Card', 'Cash'];
+    const paymentTypes: string[] = ['Payment Type', 'UPI', 'Debit Card', 'Credit Card', 'Cash'];
 
     export default function AddExpenseScreen() {
       const { addExpense, t } = useExpenseStore();
@@ -56,7 +56,7 @@ import React, { useState } from 'react';
       const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, paymentType: string, notes: string}>>(() => {
         const initial: Record<CategoryType, {amount: string, paymentType: string, notes: string}> = {} as any;
         (Object.keys(categoryIcons) as CategoryType[]).forEach(cat => {
-          initial[cat] = { amount: '', paymentType: 'Select Payment Type', notes: '' };
+          initial[cat] = { amount: '', paymentType: 'Payment Type', notes: '' };
         });
         return initial;
       });
@@ -69,7 +69,7 @@ import React, { useState } from 'react';
           const { amount, paymentType, notes } = categoryData[cat];
           const numAmount = parseFloat(amount);
           if (numAmount > 0) {
-            const finalPaymentType: PaymentType = paymentType === 'Select Payment Type' ? 'Cash' : paymentType as PaymentType;
+            const finalPaymentType: PaymentType = paymentType === 'Payment Type' ? 'Cash' : paymentType as PaymentType;
             expensesToAdd.push({ category: cat, amount: numAmount, paymentType: finalPaymentType, notes });
           }
         });
@@ -195,7 +195,7 @@ import React, { useState } from 'react';
                             itemStyle={styles.pickerItem}
                           >
                             {paymentTypes.map((type) => (
-                              <Picker.Item key={type} label={type} value={type} enabled={type !== 'Select Payment Type'} />
+                              <Picker.Item key={type} label={type} value={type} enabled={type !== 'Payment Type'} />
                             ))}
                           </Picker>
                         </View>
