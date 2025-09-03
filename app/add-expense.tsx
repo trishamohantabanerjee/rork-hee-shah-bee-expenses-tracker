@@ -46,17 +46,17 @@ import React, { useState } from 'react';
       LoanEMI: IndianRupee,
     };
 
-    const paymentTypes: PaymentType[] = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
+    const paymentTypes: string[] = ['Select Payment Type', 'UPI', 'Debit Card', 'Credit Card', 'Cash'];
 
     export default function AddExpenseScreen() {
       const { addExpense, t } = useExpenseStore();
       const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
       const [showDatePicker, setShowDatePicker] = useState(false);
       const [isLoading, setIsLoading] = useState(false);
-      const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, paymentType: PaymentType, notes: string}>>(() => {
-        const initial: Record<CategoryType, {amount: string, paymentType: PaymentType, notes: string}> = {} as any;
+      const [categoryData, setCategoryData] = useState<Record<CategoryType, {amount: string, paymentType: string, notes: string}>>(() => {
+        const initial: Record<CategoryType, {amount: string, paymentType: string, notes: string}> = {} as any;
         (Object.keys(categoryIcons) as CategoryType[]).forEach(cat => {
-          initial[cat] = { amount: '', paymentType: 'Cash', notes: '' };
+          initial[cat] = { amount: '', paymentType: 'Select Payment Type', notes: '' };
         });
         return initial;
       });
@@ -69,7 +69,8 @@ import React, { useState } from 'react';
           const { amount, paymentType, notes } = categoryData[cat];
           const numAmount = parseFloat(amount);
           if (numAmount > 0) {
-            expensesToAdd.push({ category: cat, amount: numAmount, paymentType, notes });
+            const finalPaymentType: PaymentType = paymentType === 'Select Payment Type' ? 'Cash' : paymentType as PaymentType;
+            expensesToAdd.push({ category: cat, amount: numAmount, paymentType: finalPaymentType, notes });
           }
         });
 
@@ -189,12 +190,12 @@ import React, { useState } from 'react';
                         <View style={styles.pickerContainer}>
                           <Picker
                             selectedValue={paymentType}
-                            onValueChange={(itemValue: PaymentType) => updateCategoryData(category, 'paymentType', itemValue)}
+                            onValueChange={(itemValue: string) => updateCategoryData(category, 'paymentType', itemValue)}
                             style={styles.picker}
                             itemStyle={styles.pickerItem}
                           >
                             {paymentTypes.map((type) => (
-                              <Picker.Item key={type} label={type} value={type} />
+                              <Picker.Item key={type} label={type} value={type} enabled={type !== 'Select Payment Type'} />
                             ))}
                           </Picker>
                         </View>
