@@ -77,16 +77,16 @@ export default function TestCalculationsScreen() {
         // Large numbers
         { amount: 100000, category: 'Shopping' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Major purchase' },
         { amount: 50000.50, category: 'Education' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Tuition fee' },
-        // Negative amounts (subtractions) with variations
-        { amount: -300, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Refund from store' },
-        { amount: -50.25, category: 'Subtract' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Cashback' },
-        { amount: -0.50, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Small refund' },
-        { amount: -10000, category: 'Subtract' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large refund' },
-        // EMI deductions with variations
-        { amount: -2000, category: 'LoanEMI' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Home loan EMI' },
-        { amount: -1500, category: 'AutopayDeduction' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Car loan autopay' },
-        { amount: -500.75, category: 'LoanEMI' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Small EMI' },
-        { amount: -25000, category: 'AutopayDeduction' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large autopay' }
+        // Subtract category (only category that gets subtracted)
+        { amount: 300, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Refund from store' },
+        { amount: 50.25, category: 'Subtract' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Cashback' },
+        { amount: 0.50, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Small refund' },
+        { amount: 10000, category: 'Subtract' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large refund' },
+        // AutopayDeduction and LoanEMI categories (now ADDED to expenses, not subtracted)
+        { amount: 2000, category: 'LoanEMI' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Home loan EMI' },
+        { amount: 1500, category: 'AutopayDeduction' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Car loan autopay' },
+        { amount: 500.75, category: 'LoanEMI' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Small EMI' },
+        { amount: 25000, category: 'AutopayDeduction' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large autopay' }
       ];
 
       let addExpensesPassed = true;
@@ -115,7 +115,7 @@ export default function TestCalculationsScreen() {
       results.push({
         name: 'Add Expenses (Varied Numbers)',
         passed: addExpensesPassed && addedCount === sampleExpenses.length,
-        details: `Added ${addedCount}/${sampleExpenses.length} expenses with varied numbers (decimals, large/small amounts, negatives)`
+        details: `Added ${addedCount}/${sampleExpenses.length} expenses with varied numbers (decimals, large/small amounts, AutopayDeduction & LoanEMI now ADDED)`
       });
 
       // Test 3: Set budget with realistic amount for testing
@@ -148,9 +148,15 @@ export default function TestCalculationsScreen() {
       const remainingBudget = getRemainingBudget();
       const categoryBreakdown = getExpensesByCategory();
 
-      // CORRECTED: Calculate expected total from sample expenses
-      // All amounts are added as-is (negative amounts will subtract automatically)
-      const expectedTotal = sampleExpenses.reduce((sum, e) => sum + e.amount, 0);
+      // UPDATED: Calculate expected total with new mathematical logic
+      // All categories are ADDED except "Subtract" category which is subtracted
+      const expectedTotal = sampleExpenses.reduce((sum, e) => {
+        if (e.category === 'Subtract') {
+          return sum - Math.abs(e.amount); // Subtract category: subtract the absolute value
+        } else {
+          return sum + Math.abs(e.amount); // All other categories: add the absolute value
+        }
+      }, 0);
 
       const calculationPassed = Math.abs(totalMonthly - expectedTotal) < 0.01;
 
@@ -253,26 +259,27 @@ export default function TestCalculationsScreen() {
         details: largeNumberTest && smallNumberTest ? 'Handles large (≥10k) and small (<1) amounts correctly' : 'Missing large or small number tests'
       });
 
-      // Test 11: CRITICAL NEGATIVE AMOUNT CALCULATIONS (Subtract, AutopayDeduction, LoanEMI)
-      const negativeTest = sampleExpenses.some(e => e.amount < 0);
-      const negativeCalculationPassed = negativeTest && Math.abs(totalMonthly - expectedTotal) < 0.01;
+      // Test 11: CRITICAL UPDATED CALCULATIONS (Only Subtract category is subtracted)
+      const subtractTest = sampleExpenses.some(e => e.category === 'Subtract');
+      const negativeCalculationPassed = subtractTest && Math.abs(totalMonthly - expectedTotal) < 0.01;
       
-      // DETAILED mathematical breakdown for negative amount handling
-      const positiveExpenses = sampleExpenses.filter(e => e.amount > 0);
-      const negativeExpenses = sampleExpenses.filter(e => e.amount < 0);
-      const positiveTotal = positiveExpenses.reduce((sum, e) => sum + e.amount, 0);
-      const negativeTotal = negativeExpenses.reduce((sum, e) => sum + e.amount, 0); // This will be negative
-      const netTotal = positiveTotal + negativeTotal; // Adding negative number subtracts it
+      // UPDATED mathematical breakdown for new logic
+      const addedExpenses = sampleExpenses.filter(e => e.category !== 'Subtract');
+      const subtractedExpenses = sampleExpenses.filter(e => e.category === 'Subtract');
+      const addedTotal = addedExpenses.reduce((sum, e) => sum + Math.abs(e.amount), 0);
+      const subtractedTotal = subtractedExpenses.reduce((sum, e) => sum + Math.abs(e.amount), 0);
+      const netTotal = addedTotal - subtractedTotal;
       
-      // Categorize negative expenses
+      // Categorize expenses by new logic
       const subtractExpenses = sampleExpenses.filter(e => e.category === 'Subtract');
       const autopayExpenses = sampleExpenses.filter(e => e.category === 'AutopayDeduction');
       const emiExpenses = sampleExpenses.filter(e => e.category === 'LoanEMI');
+      const otherExpenses = sampleExpenses.filter(e => !['Subtract', 'AutopayDeduction', 'LoanEMI'].includes(e.category));
       
       results.push({
-        name: 'CRITICAL: Negative Amount Math (Subtract/EMI/Autopay)',
+        name: 'CRITICAL: Updated Math Logic (AutopayDeduction & LoanEMI now ADDED)',
         passed: negativeCalculationPassed,
-        details: `🔢 LOGIC: All amounts except Subtract/EMI/Autopay are ADDED\n📈 Positive Total: ₹${positiveTotal.toLocaleString()} (${positiveExpenses.length} items)\n📉 Negative Total: ₹${negativeTotal.toLocaleString()} (${negativeExpenses.length} items)\n🎯 Net Result: ₹${netTotal.toLocaleString()}\n✅ Expected: ₹${expectedTotal.toLocaleString()} | Actual: ₹${totalMonthly.toLocaleString()}\n📊 Breakdown: Subtract(${subtractExpenses.length}) + EMI(${emiExpenses.length}) + Autopay(${autopayExpenses.length})\n${negativeCalculationPassed ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
+        details: `🔢 NEW LOGIC: All categories ADDED except Subtract (subtracted)\n📈 Added Total: ₹${addedTotal.toLocaleString()} (${addedExpenses.length} items)\n📉 Subtracted Total: ₹${subtractedTotal.toLocaleString()} (${subtractedExpenses.length} items)\n🎯 Net Result: ₹${netTotal.toLocaleString()}\n✅ Expected: ₹${expectedTotal.toLocaleString()} | Actual: ₹${totalMonthly.toLocaleString()}\n📊 Categories: Subtract(${subtractExpenses.length}) | EMI(${emiExpenses.length}) | Autopay(${autopayExpenses.length}) | Others(${otherExpenses.length})\n🔄 AutopayDeduction & LoanEMI are now ADDED to expenses\n${negativeCalculationPassed ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
       });
 
       // Test 12: Data persistence (simulate app restart)
@@ -375,7 +382,7 @@ ${passedTests === totalTests ? '✅ All tests passed!' : '⚠️ Some tests fail
           <View style={styles.header}>
             <Text style={styles.title}>App Component Test Suite</Text>
             <Text style={styles.subtitle}>
-              🧮 COMPREHENSIVE MATHEMATICAL TESTING:\n• Budget Logic: Monthly Budget - Total Expenses = Remaining\n• Expense Logic: All categories ADDED except Subtract/EMI/Autopay (SUBTRACTED)\n• Example: 70,000 - 6,000 = 64,000 remaining\n• Platform Testing: iOS, Android, Web compatibility\n• Security: Advanced input validation & data protection
+              🧮 COMPREHENSIVE MATHEMATICAL TESTING:\n• Budget Logic: Monthly Budget - Total Expenses = Remaining\n• UPDATED Expense Logic: All categories ADDED except Subtract (SUBTRACTED)\n• AutopayDeduction & LoanEMI are now ADDED to expenses\n• Example: 70,000 - 6,000 = 64,000 remaining\n• Platform Testing: iOS, Android, Web compatibility\n• Security: Advanced input validation & data protection
             </Text>
           </View>
 

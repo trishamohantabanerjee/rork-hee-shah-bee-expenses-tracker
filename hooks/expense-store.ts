@@ -430,20 +430,34 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   }, [expenses]);
 
   const getTotalMonthlyExpenses = useCallback(() => {
-    // CRITICAL FIX: Proper mathematical logic for expense calculation
-    // All categories are ADDED to total expenses (including negative amounts)
-    // Negative amounts (Subtract, AutopayDeduction, LoanEMI) reduce the total
-    // Positive amounts increase the total
+    // UPDATED MATHEMATICAL LOGIC: 
+    // - All categories are ADDED except "Subtract" category
+    // - "AutopayDeduction" and "LoanEMI" are now ADDED (not subtracted)
+    // - Only "Subtract" category is subtracted from total
     const monthlyExpenses = getCurrentMonthExpenses();
     const total = monthlyExpenses.reduce((sum, expense) => {
-      // All amounts are added as-is (negative amounts will subtract automatically)
-      return sum + expense.amount;
+      // CRITICAL FIX: Only "Subtract" category should be subtracted
+      // "AutopayDeduction" and "LoanEMI" should be ADDED to expenses
+      if (expense.category === 'Subtract') {
+        // Subtract category: subtract the absolute value
+        return sum - Math.abs(expense.amount);
+      } else {
+        // All other categories (including AutopayDeduction and LoanEMI): add the absolute value
+        return sum + Math.abs(expense.amount);
+      }
     }, 0);
     
-    console.log('TOTAL MONTHLY EXPENSES CALCULATION:', {
+    console.log('TOTAL MONTHLY EXPENSES CALCULATION (UPDATED LOGIC):', {
       expenseCount: monthlyExpenses.length,
       total: total,
-      breakdown: monthlyExpenses.map(e => ({ category: e.category, amount: e.amount, date: e.date }))
+      logic: 'All categories ADDED except Subtract (subtracted)',
+      breakdown: monthlyExpenses.map(e => ({ 
+        category: e.category, 
+        amount: e.amount, 
+        absoluteAmount: Math.abs(e.amount),
+        operation: e.category === 'Subtract' ? 'SUBTRACT' : 'ADD',
+        date: e.date 
+      }))
     });
     
     return total;
