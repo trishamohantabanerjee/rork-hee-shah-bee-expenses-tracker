@@ -60,14 +60,18 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       if (expensesData) {
         try {
           const parsedExpenses = JSON.parse(expensesData);
-          // Security: Validate expenses data structure
+          // ADVANCED SECURITY: Validate expenses data structure with enhanced checks
           if (Array.isArray(parsedExpenses)) {
             const validExpenses = parsedExpenses.filter(expense => 
               expense && 
               typeof expense.amount === 'number' && 
               expense.category && 
               expense.date &&
-              Math.abs(expense.amount) <= 10000000 // Validate amount range
+              Math.abs(expense.amount) <= 10000000 && // Validate amount range
+              /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(expense.date) && // Strict date format
+              new Date(expense.date) <= new Date() && // No future dates
+              ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI'].includes(expense.category) &&
+              (!expense.paymentType || ['UPI', 'Debit Card', 'Credit Card', 'Cash'].includes(expense.paymentType))
             );
             setExpenses(validExpenses);
           }
@@ -80,11 +84,15 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       if (budgetData) {
         try {
           const parsedBudget = JSON.parse(budgetData);
-          // Security: Validate budget data structure
+          // ADVANCED SECURITY: Validate budget data structure with enhanced checks
           if (parsedBudget && 
               typeof parsedBudget.monthly === 'number' && 
               parsedBudget.monthly >= 0 && 
-              parsedBudget.monthly <= 100000000) {
+              parsedBudget.monthly <= 100000000 &&
+              typeof parsedBudget.year === 'number' &&
+              parsedBudget.year >= 2020 && parsedBudget.year <= 2050 &&
+              typeof parsedBudget.month === 'number' &&
+              parsedBudget.month >= 0 && parsedBudget.month <= 11) {
             setBudget(parsedBudget);
           }
         } catch (e) {
@@ -150,14 +158,14 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const addExpense = useCallback(async (expense: Omit<Expense, 'id' | 'createdAt'>) => {
     try {
-      // ADVANCED SECURITY: Comprehensive input validation
+      // ADVANCED SECURITY: Comprehensive input validation with enhanced checks
       if (!expense || typeof expense.amount !== 'number' || !expense.category || !expense.date) {
         console.error('SECURITY: Invalid expense data structure provided');
         return false;
       }
       
-      // ADVANCED SECURITY: Prevent injection attacks and malicious data
-      if (Math.abs(expense.amount) > 10000000) { // 1 crore limit
+      // ADVANCED SECURITY: Prevent injection attacks and malicious data with stricter checks
+      if (Math.abs(expense.amount) > 10000000 || expense.amount < -10000000) { // 1 crore limit, allow negative for subtract
         console.error('SECURITY: Expense amount exceeds maximum allowed value');
         return false;
       }
@@ -178,26 +186,28 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
         return false;
       }
       
-      // ADVANCED SECURITY: Validate category against allowed types
+      // ADVANCED SECURITY: Validate category against allowed types with strict check
       const allowedCategories = ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI'];
       if (!allowedCategories.includes(expense.category)) {
         console.error('SECURITY: Invalid category detected');
         return false;
       }
       
-      // ADVANCED SECURITY: Validate payment type
+      // ADVANCED SECURITY: Validate payment type with strict check
       const allowedPaymentTypes = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
       if (expense.paymentType && !allowedPaymentTypes.includes(expense.paymentType)) {
         console.error('SECURITY: Invalid payment type detected');
         return false;
       }
       
+      // ADVANCED SECURITY: Sanitize and validate notes with length and content checks
+      const sanitizedNotes = expense.notes ? expense.notes.substring(0, 500).replace(/[<>"'&]/g, '').replace(/\n/g, ' ') : undefined;
+      
       const newExpense: Expense = {
         ...expense,
         id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${Math.random().toString(36).substr(2, 5)}`, // More secure ID with additional entropy
         createdAt: new Date().toISOString(),
-        // ADVANCED SECURITY: Sanitize and validate notes
-        notes: expense.notes ? expense.notes.substring(0, 500).replace(/[<>"'&]/g, '') : undefined,
+        notes: sanitizedNotes,
         // ADVANCED SECURITY: Ensure amount precision (prevent floating point attacks)
         amount: Math.round(expense.amount * 100) / 100,
       };
@@ -205,7 +215,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       const updatedExpenses = [...expenses, newExpense];
       setExpenses(updatedExpenses);
       
-      // ADVANCED SECURITY: Validate data before storage
+      // ADVANCED SECURITY: Validate data before storage with size limits
       try {
         const serialized = JSON.stringify(updatedExpenses);
         if (serialized.length > 50000000) { // 50MB limit
@@ -276,7 +286,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const updateBudget = useCallback(async (newBudget: Budget) => {
     try {
-      // ADVANCED SECURITY: Comprehensive budget validation
+      // ADVANCED SECURITY: Comprehensive budget validation with enhanced checks
       if (!newBudget || typeof newBudget.monthly !== 'number' || newBudget.monthly < 0) {
         console.error('SECURITY: Invalid budget data structure provided');
         return false;
@@ -288,7 +298,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
         return false;
       }
       
-      // ADVANCED SECURITY: Validate month and year ranges
+      // ADVANCED SECURITY: Validate month and year ranges with strict checks
       if (newBudget.month < 0 || newBudget.month > 11 || newBudget.year < 2020 || newBudget.year > 2050) {
         console.error('SECURITY: Invalid budget month or year detected');
         return false;
@@ -303,7 +313,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       
       setBudget(sanitizedBudget);
       
-      // ADVANCED SECURITY: Validate serialization
+      // ADVANCED SECURITY: Validate serialization with size check
       try {
         const serialized = JSON.stringify(sanitizedBudget);
         if (serialized.length > 1000) { // Budget should be small
@@ -404,17 +414,16 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   }, [expenses]);
 
   const generateCSV = useCallback(() => {
-    const header = 'id,createdAt,date,category,amount,notes,paymentType';
+    // UPDATED: TSV/Excel/CSV compatible format with columns: Date, ExpenseType, PaymentType, Amount, Notes
+    const header = 'Date\tExpenseType\tPaymentType\tAmount\tNotes';
     const rows = expenses.map(e => [
-      e.id,
-      e.createdAt,
       e.date,
-      e.category,
-      e.amount.toString(),
-      (e.notes ?? '').replace(/"/g, '""'),
+      e.category, // ExpenseType
       e.paymentType ?? 'Cash',
+      e.amount.toString(),
+      (e.notes ?? '').replace(/"/g, '""').replace(/\t/g, ' '), // Sanitize for TSV
     ]);
-    const csv = [header, ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const csv = [header, ...rows.map(r => r.join('\t'))].join('\n');
     return csv;
   }, [expenses]);
 
@@ -475,7 +484,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     
     // CRITICAL MATHEMATICAL FIX: Remaining Budget = Monthly Budget - Total Expenses
     // This is the core logic: Budget - Expenses = Remaining
-    // Example: Budget 70,000 - Expenses 6,000 = Remaining 64,000
+    // Example: 70,000 - 6,000 = 64,000 remaining
     const totalExpenses = getTotalMonthlyExpenses();
     const remaining = budget.monthly - totalExpenses;
     

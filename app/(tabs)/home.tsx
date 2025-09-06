@@ -11,6 +11,7 @@ import React, { useState } from 'react';
       Modal
     } from 'react-native';
     import { router } from 'expo-router';
+    import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
     import {
       Plus,
@@ -56,20 +57,26 @@ import React, { useState } from 'react';
       // Example: 70,000 - 6,000 = 64,000 remaining
 
       const handleExport = async () => {
-        const csv = `Date,Category,Amount,Notes,PaymentType\n${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n')}`;
+        const csv = `Date\tExpenseType\tPaymentType\tAmount\tNotes
+${expenses.map(e => `"${e.date}"\t"${e.category}"\t"${e.paymentType || 'Cash'}"\t"${e.amount}"\t"${(e.notes || '').replace(/"/g, '""').replace(/\t/g, ' ')}"`).join('\n')}`;
         await Clipboard.setStringAsync(csv);
-        Alert.alert('Exported', 'Copied in Excel/Sheets compatible format!');
+        Alert.alert('Exported', 'Copied in TSV/Excel/CSV compatible format!');
       };
 
       const handleSummaryTap = (type: string) => {
         let message = '';
         switch (type) {
           case 'monthly':
-            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions`;
+            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}
+${monthlyExpenses.length} transactions`;
             break;
           case 'remaining':
             if (remainingBudget !== null && budget) {
-              message = `Budget: ₹${budget.monthly.toLocaleString()}\nSpent: ₹${totalMonthly.toLocaleString()}\nRemaining: ₹${remainingBudget.toLocaleString()}\n\nCalculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString()} = ${remainingBudget.toLocaleString()}`;
+              message = `Budget: ₹${budget.monthly.toLocaleString()}
+Spent: ₹${totalMonthly.toLocaleString()}
+Remaining: ₹${remainingBudget.toLocaleString()}
+
+Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString()} = ${remainingBudget.toLocaleString()}`;
             } else {
               message = 'No budget set. Tap to set your monthly budget.';
             }
