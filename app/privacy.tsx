@@ -15,11 +15,7 @@ import React from 'react';
       };
 
       const handleBack = () => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)/home');
-        }
+        router.replace('/(tabs)/home');
       };
 
       const privacyText = `HeeSaaBee collects no personal data. All expenses, including payment types and EMI data, remain local on your device. We only collect minimal, anonymized diagnostics if you explicitly opt-in later. You may export or delete all data at any time. For questions, contact support-heesaabee@beindiya.online.

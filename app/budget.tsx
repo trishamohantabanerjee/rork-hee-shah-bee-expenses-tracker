@@ -49,11 +49,7 @@ export default function BudgetScreen() {
         { 
           text: 'OK', 
           onPress: () => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(tabs)/home');
-            }
+            router.replace('/(tabs)/home');
           }
         }
       ]);

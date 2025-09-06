@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { IndianRupee } from 'lucide-react-native';
+import { IndianRupee, Shield } from 'lucide-react-native';
 import { useExpenseStore } from '../hooks/expense-store';
 
 export default function SplashScreen() {
-  const { settings, isLoading, markSplashAsSeen } = useExpenseStore();
+  const { settings, isLoading, markSplashAsSeen, updateSettings } = useExpenseStore();
+  const [showPrivacyPrompt, setShowPrivacyPrompt] = useState(false);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const scaleAnim = useMemo(() => new Animated.Value(0.8), []);
 
@@ -28,7 +29,7 @@ export default function SplashScreen() {
       if (!isLoading) {
         await markSplashAsSeen();
         if (!settings.hasAcceptedPrivacy) {
-          router.replace('/privacy');
+          setShowPrivacyPrompt(true);
         } else {
           router.replace('/(tabs)/home');
         }
@@ -37,6 +38,15 @@ export default function SplashScreen() {
 
     return () => clearTimeout(timer);
   }, [isLoading, settings.hasAcceptedPrivacy, markSplashAsSeen, fadeAnim, scaleAnim]);
+
+  const handleAgree = async () => {
+    await updateSettings({ hasAcceptedPrivacy: true });
+    router.replace('/(tabs)/home');
+  };
+
+  const handleViewPrivacyPolicy = () => {
+    router.push('/privacy');
+  };
 
   return (
     <View style={styles.container}>
@@ -53,13 +63,29 @@ export default function SplashScreen() {
           <IndianRupee size={60} color="#25D366" strokeWidth={2} />
         </View>
         <Text style={styles.title}>HeeSaaBee</Text>
-        <TouchableOpacity 
-          onPress={() => router.push('/privacy')}
-          style={styles.privacyLink}
-        >
-          <Text style={styles.privacyLinkText}>Privacy Policy</Text>
-        </TouchableOpacity>
-        <Text style={styles.subtitle}>Track your expenses</Text>
+        
+        {showPrivacyPrompt ? (
+          <View style={styles.privacyPrompt}>
+            <Text style={styles.privacyText}>
+              By continuing, you agree to our{' '}
+              <Text 
+                style={styles.privacyLink} 
+                onPress={handleViewPrivacyPolicy}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+            <TouchableOpacity 
+              style={styles.agreeButton}
+              onPress={handleAgree}
+            >
+              <Shield size={20} color="#FFFFFF" />
+              <Text style={styles.agreeButtonText}>I Agree</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <Text style={styles.subtitle}>Track your expenses</Text>
+        )}
       </Animated.View>
     </View>
   );
@@ -96,14 +122,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#B0B0B0',
   },
-  privacyLink: {
-    marginVertical: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+  privacyPrompt: {
+    alignItems: 'center',
+    marginTop: 20,
+    paddingHorizontal: 20,
   },
-  privacyLinkText: {
+  privacyText: {
     fontSize: 14,
+    color: '#B0B0B0',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  privacyLink: {
     color: '#25D366',
     textDecorationLine: 'underline',
+  },
+  agreeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#25D366',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  agreeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
