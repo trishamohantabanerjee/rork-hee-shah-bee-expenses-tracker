@@ -148,10 +148,9 @@ export default function TestCalculationsScreen() {
       const remainingBudget = getRemainingBudget();
       const categoryBreakdown = getExpensesByCategory();
 
-      // Calculate expected total from sample expenses
-      const positiveSum = sampleExpenses.filter(e => e.amount > 0).reduce((sum, e) => sum + e.amount, 0);
-      const negativeSum = Math.abs(sampleExpenses.filter(e => e.amount < 0).reduce((sum, e) => sum + e.amount, 0));
-      const expectedTotal = positiveSum - negativeSum;
+      // CORRECTED: Calculate expected total from sample expenses
+      // All amounts are added as-is (negative amounts will subtract automatically)
+      const expectedTotal = sampleExpenses.reduce((sum, e) => sum + e.amount, 0);
 
       const calculationPassed = Math.abs(totalMonthly - expectedTotal) < 0.01;
 
@@ -292,7 +291,6 @@ export default function TestCalculationsScreen() {
 
       // Test 14: Clear day-wise data functionality
       try {
-        const testDate = new Date().toISOString().split('T')[0];
         const beforeCount = expenses.length;
         // This would be tested in the actual clear-days screen
         results.push({
