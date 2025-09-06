@@ -99,11 +99,7 @@ import React, { useState } from 'react';
                 { 
                   text: 'OK', 
                   onPress: () => {
-                    if (router.canGoBack()) {
-                      router.back();
-                    } else {
-                      router.replace('/(tabs)/home');
-                    }
+                    router.replace('/(tabs)/home');
                   }
                 }
               ]);
@@ -156,11 +152,7 @@ import React, { useState } from 'react';
                   headerTintColor: Colors.text,
                   headerRight: () => (
                     <TouchableOpacity onPress={() => {
-                      if (router.canGoBack()) {
-                        router.back();
-                      } else {
-                        router.replace('/(tabs)/home');
-                      }
+                      router.replace('/(tabs)/home');
                     }}>
                       <X size={24} color={Colors.text} />
                     </TouchableOpacity>
