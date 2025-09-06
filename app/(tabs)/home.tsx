@@ -22,7 +22,9 @@ import React, { useState } from 'react';
       IndianRupee,
       Edit3,
       Save,
-      X
+      X,
+      Calendar,
+      TestTube
     } from 'lucide-react-native';
     import * as Clipboard from 'expo-clipboard';
     import { Colors } from '@/constants/colors';
@@ -245,6 +247,24 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
                 <Text style={styles.actionButtonText}>{t.addExpense}</Text>
               </TouchableOpacity>
             </View>
+            
+            <View style={styles.quickActions}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.secondaryButton, { backgroundColor: Colors.card, borderColor: Colors.border }]}
+                onPress={() => router.push('/day-wise-expenses')}
+              >
+                <Calendar size={24} color={Colors.primary} />
+                <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Day-wise View</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.actionButton, styles.secondaryButton, { backgroundColor: Colors.card, borderColor: Colors.border }]}
+                onPress={() => router.push('/test-calculations')}
+              >
+                <TestTube size={24} color={Colors.primary} />
+                <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Run Tests</Text>
+              </TouchableOpacity>
+            </View>
 
             {monthlyExpenses.length > 0 && (
               <View style={[styles.recentCard, { backgroundColor: Colors.card }]}>
@@ -442,6 +462,9 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
         gap: 12,
         marginBottom: Platform.OS === 'android' ? 32 : 24, // More space on Android
       },
+      secondaryButton: {
+        borderWidth: 2,
+      },
       actionButton: {
         flex: 1,
         flexDirection: 'row',
@@ -465,6 +488,7 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
       actionButtonText: {
         fontSize: 16,
         fontWeight: '600' as const,
+        color: 'white',
       },
       recentCard: {
         padding: 20,

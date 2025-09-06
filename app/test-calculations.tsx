@@ -8,9 +8,15 @@ import {
   Alert,
   Platform
 } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CheckCircle, XCircle, Play, Home } from 'lucide-react-native';
+import {
+  CheckCircle,
+  XCircle,
+  Play,
+  ChevronLeft,
+  RefreshCw,
+} from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 import type { CategoryType, PaymentType } from '@/types/expense';
@@ -434,26 +440,21 @@ ${passedTests === totalTests ? '✅ All tests passed!' : '⚠️ Some tests fail
   };
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: 'Test Calculations',
-          headerStyle: { backgroundColor: Colors.background },
-          headerTintColor: Colors.text,
-          headerRight: () => (
-            <TouchableOpacity onPress={() => router.replace('/(tabs)/home')}>
-              <Home size={24} color={Colors.text} />
-            </TouchableOpacity>
-          ),
-        }} 
-      />
-      
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <Text style={styles.title}>App Component Test Suite</Text>
-            <Text style={styles.subtitle}>
-              🧮 COMPREHENSIVE MATHEMATICAL TESTING:
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <ChevronLeft size={24} color={Colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: Colors.text }]}>Mathematical Tests</Text>
+        <TouchableOpacity onPress={() => setTestResults([])}>
+          <RefreshCw size={24} color={Colors.text} />
+        </TouchableOpacity>
+      </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={[styles.infoCard, { backgroundColor: Colors.card }]}>
+            <Text style={[styles.title, { color: Colors.text }]}>Comprehensive Test Suite</Text>
+            <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>
+              🧮 MATHEMATICAL TESTING:
 • Budget Logic: Monthly Budget - Total Expenses = Remaining
 • UPDATED Expense Logic: All categories ADDED except Subtract (SUBTRACTED)
 • AutopayDeduction & LoanEMI are now ADDED to expenses
@@ -507,37 +508,44 @@ ${passedTests === totalTests ? '✅ All tests passed!' : '⚠️ Some tests fail
               )}
             </View>
           )}
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
-  safeArea: {
-    flex: 1,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600' as const,
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 20,
-  },
-  header: {
-    paddingVertical: 20,
+    paddingHorizontal: 16,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
     color: Colors.text,
     marginBottom: 8,
   },
+  infoCard: {
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
   subtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
   },
   runButton: {
     flexDirection: 'row',
@@ -554,7 +562,7 @@ const styles = StyleSheet.create({
   },
   runButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.background,
   },
   resultsContainer: {
@@ -562,7 +570,7 @@ const styles = StyleSheet.create({
   },
   resultsTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.text,
     marginBottom: 16,
   },
@@ -581,7 +589,7 @@ const styles = StyleSheet.create({
   },
   testName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.text,
     marginLeft: 8,
   },
@@ -609,7 +617,7 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: Colors.text,
     marginBottom: 8,
   },
