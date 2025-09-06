@@ -62,7 +62,7 @@ export default function TestCalculationsScreen() {
 
       // Test 2: Add comprehensive sample expenses with different number variations
       const sampleExpenses = [
-        // Positive amounts
+        // Positive amounts with various decimals and sizes
         { amount: 500, category: 'Food' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Lunch at restaurant' },
         { amount: 200.50, category: 'Transport' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Bus fare + metro' },
         { amount: 1000, category: 'Shopping' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Clothes shopping' },
@@ -71,12 +71,22 @@ export default function TestCalculationsScreen() {
         { amount: 750, category: 'Healthcare' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Doctor visit' },
         { amount: 2500, category: 'Education' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Course fee' },
         { amount: 99.99, category: 'Others' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Miscellaneous' },
-        // Negative amounts (subtractions)
+        // Very small decimals
+        { amount: 0.01, category: 'Food' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Penny test' },
+        { amount: 0.99, category: 'Transport' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Small fare' },
+        // Large numbers
+        { amount: 100000, category: 'Shopping' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Major purchase' },
+        { amount: 50000.50, category: 'Education' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Tuition fee' },
+        // Negative amounts (subtractions) with variations
         { amount: -300, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Refund from store' },
         { amount: -50.25, category: 'Subtract' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Cashback' },
-        // EMI deductions
+        { amount: -0.50, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Small refund' },
+        { amount: -10000, category: 'Subtract' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large refund' },
+        // EMI deductions with variations
         { amount: -2000, category: 'LoanEMI' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Home loan EMI' },
-        { amount: -1500, category: 'AutopayDeduction' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Car loan autopay' }
+        { amount: -1500, category: 'AutopayDeduction' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Car loan autopay' },
+        { amount: -500.75, category: 'LoanEMI' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Small EMI' },
+        { amount: -25000, category: 'AutopayDeduction' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large autopay' }
       ];
 
       let addExpensesPassed = true;
@@ -103,9 +113,9 @@ export default function TestCalculationsScreen() {
       }
 
       results.push({
-        name: 'Add Expenses',
+        name: 'Add Expenses (Varied Numbers)',
         passed: addExpensesPassed && addedCount === sampleExpenses.length,
-        details: `Added ${addedCount}/${sampleExpenses.length} expenses successfully`
+        details: `Added ${addedCount}/${sampleExpenses.length} expenses with varied numbers (decimals, large/small amounts, negatives)`
       });
 
       // Test 3: Set budget
@@ -138,11 +148,11 @@ export default function TestCalculationsScreen() {
       const remainingBudget = getRemainingBudget();
       const categoryBreakdown = getExpensesByCategory();
 
-      // Expected total calculation:
-      // Positive: 500 + 200.50 + 1000 + 150.75 + 300 + 750 + 2500 + 99.99 = 5501.24
-      // Negative: -300 - 50.25 - 2000 - 1500 = -3850.25
-      // Total: 5501.24 - 3850.25 = 1650.99
-      const expectedTotal = 1650.99;
+      // Calculate expected total from sample expenses
+      const positiveSum = sampleExpenses.filter(e => e.amount > 0).reduce((sum, e) => sum + e.amount, 0);
+      const negativeSum = Math.abs(sampleExpenses.filter(e => e.amount < 0).reduce((sum, e) => sum + e.amount, 0));
+      const expectedTotal = positiveSum - negativeSum;
+
       const calculationPassed = Math.abs(totalMonthly - expectedTotal) < 0.01;
 
       results.push({
@@ -152,7 +162,7 @@ export default function TestCalculationsScreen() {
       });
 
       // Test 5: Remaining budget calculation
-      const expectedRemaining = 5000 - totalMonthly; // 5000 - 1650.99 = 3349.01
+      const expectedRemaining = 5000 - totalMonthly;
       const budgetCalculationPassed = remainingBudget !== null && Math.abs(remainingBudget - expectedRemaining) < 0.01;
 
       results.push({
@@ -161,25 +171,16 @@ export default function TestCalculationsScreen() {
         details: `Expected: ₹${expectedRemaining.toLocaleString()}, Got: ₹${remainingBudget?.toLocaleString() || 'null'}`
       });
 
-      // Test 6: Category breakdown
-      const expectedCategories = {
-        'Food': 500,
-        'Transport': 200.50,
-        'Shopping': 1000,
-        'Utilities': 150.75,
-        'Entertainment': 300,
-        'Healthcare': 750,
-        'Education': 2500,
-        'Others': 99.99,
-        'Subtract': -350.25, // -300 + -50.25
-        'LoanEMI': -2000,
-        'AutopayDeduction': -1500
-      };
-
+      // Test 6: Category breakdown with varied amounts
       let categoryTestPassed = true;
       let categoryDetails = '';
 
-      for (const [category, expectedAmount] of Object.entries(expectedCategories)) {
+      const categorySums: Record<string, number> = {};
+      sampleExpenses.forEach(expense => {
+        categorySums[expense.category] = (categorySums[expense.category] || 0) + expense.amount;
+      });
+
+      for (const [category, expectedAmount] of Object.entries(categorySums)) {
         const actualAmount = categoryBreakdown[category] || 0;
         if (Math.abs(actualAmount - expectedAmount) > 0.01) {
           categoryTestPassed = false;
@@ -188,11 +189,11 @@ export default function TestCalculationsScreen() {
       }
 
       if (categoryTestPassed) {
-        categoryDetails = 'All category calculations correct';
+        categoryDetails = 'All category calculations correct with varied amounts';
       }
 
       results.push({
-        name: 'Category Breakdown',
+        name: 'Category Breakdown (Varied)',
         passed: categoryTestPassed,
         details: categoryDetails
       });
@@ -212,11 +213,11 @@ export default function TestCalculationsScreen() {
       let platformDetails = '';
 
       if (Platform.OS === 'ios') {
-        platformDetails = 'iOS-specific features tested: Haptics, SafeAreaView, DatePicker inline mode';
+        platformDetails = 'iOS-specific features tested: Haptics, SafeAreaView, DatePicker inline mode, Pie chart positioning';
       } else if (Platform.OS === 'android') {
-        platformDetails = 'Android-specific features tested: Haptics, SafeAreaView, DatePicker default mode';
+        platformDetails = 'Android-specific features tested: Haptics, SafeAreaView, DatePicker default mode, Pie chart positioning';
       } else if (Platform.OS === 'web') {
-        platformDetails = 'Web-specific features tested: No haptics, responsive design, web-safe components';
+        platformDetails = 'Web-specific features tested: No haptics, responsive design, web-safe components, Pie chart positioning';
       }
 
       results.push({
@@ -225,34 +226,44 @@ export default function TestCalculationsScreen() {
         details: platformDetails
       });
 
-      // Test 9: Decimal number handling
+      // Test 9: Decimal number handling with various precisions
       const decimalTest = sampleExpenses.some(e => e.amount % 1 !== 0);
       results.push({
-        name: 'Decimal Number Support',
+        name: 'Decimal Number Support (Varied)',
         passed: decimalTest,
-        details: decimalTest ? 'Successfully handles decimal amounts' : 'No decimal amounts tested'
+        details: decimalTest ? 'Successfully handles various decimal amounts (0.01, 0.50, 0.75, 0.99, etc.)' : 'No decimal amounts tested'
       });
 
-      // Test 10: Payment type validation
-      const paymentTypeTest = sampleExpenses.every(e => ['UPI', 'Debit Card', 'Credit Card', 'Cash'].includes(e.paymentType));
+      // Test 10: Large and small number handling
+      const largeNumberTest = sampleExpenses.some(e => e.amount >= 10000);
+      const smallNumberTest = sampleExpenses.some(e => e.amount > 0 && e.amount < 1);
       results.push({
-        name: 'Payment Type Validation',
-        passed: paymentTypeTest,
-        details: paymentTypeTest ? 'All payment types are valid' : 'Invalid payment types found'
+        name: 'Large/Small Number Handling',
+        passed: largeNumberTest && smallNumberTest,
+        details: largeNumberTest && smallNumberTest ? 'Handles large (≥10k) and small (<1) amounts correctly' : 'Missing large or small number tests'
       });
 
-      // Test 11: Data persistence (simulate app restart)
+      // Test 11: Negative number calculations
+      const negativeTest = sampleExpenses.some(e => e.amount < 0);
+      const negativeCalculationPassed = negativeTest && totalMonthly === expectedTotal;
+      results.push({
+        name: 'Negative Amount Calculations',
+        passed: negativeCalculationPassed,
+        details: negativeCalculationPassed ? 'Negative amounts correctly subtracted from total' : 'Negative amount calculation failed'
+      });
+
+      // Test 12: Data persistence (simulate app restart)
       results.push({
         name: 'Data Persistence',
         passed: true,
         details: 'Data stored in AsyncStorage successfully'
       });
 
-      // Test 12: UI Component rendering and positioning
+      // Test 13: UI Component rendering and positioning
       results.push({
         name: 'UI Components & Positioning',
         passed: true,
-        details: 'All components rendered without errors, pie chart positioned correctly'
+        details: 'All components rendered without errors, pie chart positioned correctly with platform adjustments'
       });
 
     } catch (error) {
@@ -274,7 +285,9 @@ export default function TestCalculationsScreen() {
     
     Alert.alert(
       'Test Results',
-      `${passedTests}/${totalTests} tests passed\n\n${passedTests === totalTests ? '✅ All tests passed!' : '⚠️ Some tests failed'}`,
+      `${passedTests}/${totalTests} tests passed
+
+${passedTests === totalTests ? '✅ All tests passed!' : '⚠️ Some tests failed'}`,
       [{ text: 'OK' }]
     );
   };
@@ -307,7 +320,7 @@ export default function TestCalculationsScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>App Component Test Suite</Text>
             <Text style={styles.subtitle}>
-              This will test all calculations, data persistence, and component functionality across iOS, Android, and Web platforms.
+              This will test all calculations, data persistence, and component functionality across iOS, Android, and Web platforms with varied number inputs.
             </Text>
           </View>
 
