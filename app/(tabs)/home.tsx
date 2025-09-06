@@ -39,8 +39,8 @@ import React from 'react';
       const remainingBudget = getRemainingBudget();
       const expensesByCategory = getExpensesByCategory();
 
-      // New: Total spent till now (all-time)
-      const totalAllTime = expenses.reduce((sum, e) => sum + e.amount, 0);
+      // Removed: Total spent till now (all-time)
+      // const totalAllTime = expenses.reduce((sum, e) => sum + e.amount, 0);
 
       const handleExport = async () => {
         const csv = `Date,Category,Amount,Notes,PaymentType\n${expenses.map(e => `"${e.date}","${e.category}","${e.amount}","${e.notes || ''}","${e.paymentType || 'Cash'}"`).join('\n')}`;
@@ -52,10 +52,13 @@ import React from 'react';
         let message = '';
         switch (type) {
           case 'monthly':
-            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions`;
+            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}
+${monthlyExpenses.length} transactions`;
             break;
-          case 'allTime':
-            message = `Total Spent Till Now: ₹${totalAllTime.toLocaleString()}\n${expenses.length} total transactions`;
+          case 'remaining':
+            message = remainingBudget !== null
+              ? `Remaining Budget: ₹${remainingBudget.toLocaleString()}`
+              : 'No budget set';
             break;
         }
         Alert.alert('Summary', message);
@@ -120,20 +123,20 @@ import React from 'react';
 
               <TouchableOpacity
                 style={[styles.summaryCard, { backgroundColor: Colors.card }]}
-                onPress={() => handleSummaryTap('allTime')}
+                onPress={() => handleSummaryTap('remaining')}
                 activeOpacity={0.7}
               >
                 <View style={styles.cardHeader}>
                   <IndianRupee size={24} color={Colors.primary} />
                   <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>
-                    Spent Till Now
+                    Remaining Budget
                   </Text>
                 </View>
                 <Text style={[styles.cardValue, { color: Colors.text }]}>
-                  ₹{totalAllTime.toLocaleString()}
+                  ₹{remainingBudget !== null ? remainingBudget.toLocaleString() : '0'}
                 </Text>
-                <Text style={[styles.cardSubtext, { color: Colors.textSecondary }]}>
-                  {expenses.length} total transactions
+                <Text style={[styles.cardSubtext, { color: remainingBudget !== null && remainingBudget > 0 ? '#10B981' : '#EF4444' }]}>
+                  {remainingBudget !== null ? (remainingBudget > 0 ? 'Available' : 'Over budget') : 'Set budget'}
                 </Text>
               </TouchableOpacity>
             </View>
