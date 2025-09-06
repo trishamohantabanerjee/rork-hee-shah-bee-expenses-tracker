@@ -45,16 +45,14 @@ export default function BudgetScreen() {
     setIsLoading(false);
 
     if (success) {
-      Alert.alert('Success', t.budgetSet, [
-        { 
-          text: 'OK', 
-          onPress: () => {
-            router.replace('/(tabs)/home');
-          }
-        }
-      ]);
+      // REQUIREMENT: Automatically redirect to home after setting budget
+      router.replace('/(tabs)/home');
+      // Show success message after navigation
+      setTimeout(() => {
+        Alert.alert('Success', 'Monthly budget set successfully! You can now track your expenses against this budget.');
+      }, 100);
     } else {
-      Alert.alert('Error', 'Failed to set budget');
+      Alert.alert('Error', 'Failed to set budget. Please try again.');
     }
   };
 

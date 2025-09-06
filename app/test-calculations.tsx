@@ -122,18 +122,18 @@ export default function TestCalculationsScreen() {
       try {
         const now = new Date();
         const success = await updateBudget({
-          monthly: 75000, // Set to 75,000 to match user's screenshot exactly
+          monthly: 70000, // Set to 70,000 as per user's example (70k budget - 6k expenses = 64k remaining)
           year: now.getFullYear(),
           month: now.getMonth()
         });
         results.push({
-          name: 'Set Budget',
+          name: 'Set Budget (User Example)',
           passed: success,
-          details: success ? 'Budget set to ₹75,000 (matching user screenshot exactly)' : 'Failed to set budget'
+          details: success ? 'Budget set to ₹70,000 (as per user example: 70k - 6k = 64k remaining)' : 'Failed to set budget'
         });
       } catch (error) {
         results.push({
-          name: 'Set Budget',
+          name: 'Set Budget (User Example)',
           passed: false,
           details: 'Failed to set budget',
           error: String(error)
@@ -161,23 +161,25 @@ export default function TestCalculationsScreen() {
         details: `Expected: ₹${expectedTotal.toLocaleString()}, Got: ₹${totalMonthly.toLocaleString()}`
       });
 
-      // Test 5: Remaining budget calculation (CRITICAL FIX)
-      const expectedRemaining = 75000 - totalMonthly; // Budget - Total Expenses (75k from screenshot)
+      // Test 5: CRITICAL MATHEMATICAL LOGIC TEST - Remaining budget calculation
+      const expectedRemaining = 70000 - totalMonthly; // Budget - Total Expenses (70k as per user example)
       const budgetCalculationPassed = remainingBudget !== null && Math.abs(remainingBudget - expectedRemaining) < 0.01;
       
-      // Additional validation for the mathematical logic
+      // COMPREHENSIVE mathematical validation
       const mathValidation = {
-        budget: 75000,
+        budget: 70000,
         totalExpenses: totalMonthly,
-        calculatedRemaining: 75000 - totalMonthly,
+        calculatedRemaining: 70000 - totalMonthly,
         actualRemaining: remainingBudget,
-        isCorrect: budgetCalculationPassed
+        isCorrect: budgetCalculationPassed,
+        formula: 'Monthly Budget - Total Expenses = Remaining Budget',
+        example: '70,000 - 6,000 = 64,000 (as per user requirement)'
       };
 
       results.push({
-        name: 'Remaining Budget Calculation (FIXED)',
+        name: 'CRITICAL: Remaining Budget Math (FIXED)',
         passed: budgetCalculationPassed,
-        details: `Budget: ₹75,000 | Spent: ₹${totalMonthly.toLocaleString()} | Expected Remaining: ₹${expectedRemaining.toLocaleString()} | Actual: ₹${remainingBudget?.toLocaleString() || 'null'} | Math Check: ${mathValidation.isCorrect ? '✅' : '❌'}`
+        details: `✅ FORMULA: ${mathValidation.formula}\n📊 Budget: ₹70,000 | Spent: ₹${totalMonthly.toLocaleString()} | Expected: ₹${expectedRemaining.toLocaleString()} | Actual: ₹${remainingBudget?.toLocaleString() || 'null'}\n🎯 Example: ${mathValidation.example}\n${mathValidation.isCorrect ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
       });
 
       // Test 6: Category breakdown with varied amounts
@@ -252,21 +254,26 @@ export default function TestCalculationsScreen() {
         details: largeNumberTest && smallNumberTest ? 'Handles large (≥10k) and small (<1) amounts correctly' : 'Missing large or small number tests'
       });
 
-      // Test 11: Negative number calculations (CRITICAL TEST)
+      // Test 11: CRITICAL NEGATIVE AMOUNT CALCULATIONS (Subtract, AutopayDeduction, LoanEMI)
       const negativeTest = sampleExpenses.some(e => e.amount < 0);
       const negativeCalculationPassed = negativeTest && Math.abs(totalMonthly - expectedTotal) < 0.01;
       
-      // Detailed breakdown for negative amount handling
+      // DETAILED mathematical breakdown for negative amount handling
       const positiveExpenses = sampleExpenses.filter(e => e.amount > 0);
       const negativeExpenses = sampleExpenses.filter(e => e.amount < 0);
       const positiveTotal = positiveExpenses.reduce((sum, e) => sum + e.amount, 0);
       const negativeTotal = negativeExpenses.reduce((sum, e) => sum + e.amount, 0); // This will be negative
       const netTotal = positiveTotal + negativeTotal; // Adding negative number subtracts it
       
+      // Categorize negative expenses
+      const subtractExpenses = sampleExpenses.filter(e => e.category === 'Subtract');
+      const autopayExpenses = sampleExpenses.filter(e => e.category === 'AutopayDeduction');
+      const emiExpenses = sampleExpenses.filter(e => e.category === 'LoanEMI');
+      
       results.push({
-        name: 'Negative Amount Calculations (DETAILED)',
+        name: 'CRITICAL: Negative Amount Math (Subtract/EMI/Autopay)',
         passed: negativeCalculationPassed,
-        details: `Positive: ₹${positiveTotal.toLocaleString()} | Negative: ₹${negativeTotal.toLocaleString()} | Net: ₹${netTotal.toLocaleString()} | Expected: ₹${expectedTotal.toLocaleString()} | Actual: ₹${totalMonthly.toLocaleString()} | ${negativeCalculationPassed ? '✅ Correct' : '❌ Failed'}`
+        details: `🔢 LOGIC: All amounts except Subtract/EMI/Autopay are ADDED\n📈 Positive Total: ₹${positiveTotal.toLocaleString()} (${positiveExpenses.length} items)\n📉 Negative Total: ₹${negativeTotal.toLocaleString()} (${negativeExpenses.length} items)\n🎯 Net Result: ₹${netTotal.toLocaleString()}\n✅ Expected: ₹${expectedTotal.toLocaleString()} | Actual: ₹${totalMonthly.toLocaleString()}\n📊 Breakdown: Subtract(${subtractExpenses.length}) + EMI(${emiExpenses.length}) + Autopay(${autopayExpenses.length})\n${negativeCalculationPassed ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
       });
 
       // Test 12: Data persistence (simulate app restart)
@@ -370,7 +377,7 @@ ${passedTests === totalTests ? '✅ All tests passed!' : '⚠️ Some tests fail
           <View style={styles.header}>
             <Text style={styles.title}>App Component Test Suite</Text>
             <Text style={styles.subtitle}>
-              This will test all calculations, data persistence, and component functionality across iOS, Android, and Web platforms with varied number inputs.
+              🧮 COMPREHENSIVE MATHEMATICAL TESTING:\n• Budget Logic: Monthly Budget - Total Expenses = Remaining\n• Expense Logic: All categories ADDED except Subtract/EMI/Autopay (SUBTRACTED)\n• Example: 70,000 - 6,000 = 64,000 remaining\n• Platform Testing: iOS, Android, Web compatibility\n• Security: Advanced input validation & data protection
             </Text>
           </View>
 

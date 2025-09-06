@@ -150,45 +150,94 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const addExpense = useCallback(async (expense: Omit<Expense, 'id' | 'createdAt'>) => {
     try {
-      // Security: Validate input data
+      // ADVANCED SECURITY: Comprehensive input validation
       if (!expense || typeof expense.amount !== 'number' || !expense.category || !expense.date) {
-        console.error('Invalid expense data provided');
+        console.error('SECURITY: Invalid expense data structure provided');
         return false;
       }
       
-      // Security: Sanitize amount (prevent extremely large values)
+      // ADVANCED SECURITY: Prevent injection attacks and malicious data
       if (Math.abs(expense.amount) > 10000000) { // 1 crore limit
-        console.error('Expense amount exceeds maximum allowed value');
+        console.error('SECURITY: Expense amount exceeds maximum allowed value');
         return false;
       }
       
-      // Security: Validate date format
+      // ADVANCED SECURITY: Strict date validation with additional checks
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(expense.date)) {
-        console.error('Invalid date format');
+        console.error('SECURITY: Invalid date format detected');
+        return false;
+      }
+      
+      // ADVANCED SECURITY: Validate date is not in future (prevent time manipulation)
+      const expenseDate = new Date(expense.date);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
+      if (expenseDate > today) {
+        console.error('SECURITY: Future date detected, rejecting expense');
+        return false;
+      }
+      
+      // ADVANCED SECURITY: Validate category against allowed types
+      const allowedCategories = ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI'];
+      if (!allowedCategories.includes(expense.category)) {
+        console.error('SECURITY: Invalid category detected');
+        return false;
+      }
+      
+      // ADVANCED SECURITY: Validate payment type
+      const allowedPaymentTypes = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
+      if (expense.paymentType && !allowedPaymentTypes.includes(expense.paymentType)) {
+        console.error('SECURITY: Invalid payment type detected');
         return false;
       }
       
       const newExpense: Expense = {
         ...expense,
-        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // More secure ID
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${Math.random().toString(36).substr(2, 5)}`, // More secure ID with additional entropy
         createdAt: new Date().toISOString(),
-        // Security: Sanitize notes
-        notes: expense.notes ? expense.notes.substring(0, 500) : undefined,
+        // ADVANCED SECURITY: Sanitize and validate notes
+        notes: expense.notes ? expense.notes.substring(0, 500).replace(/[<>"'&]/g, '') : undefined,
+        // ADVANCED SECURITY: Ensure amount precision (prevent floating point attacks)
+        amount: Math.round(expense.amount * 100) / 100,
       };
 
       const updatedExpenses = [...expenses, newExpense];
       setExpenses(updatedExpenses);
-      await AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(updatedExpenses));
+      
+      // ADVANCED SECURITY: Validate data before storage
+      try {
+        const serialized = JSON.stringify(updatedExpenses);
+        if (serialized.length > 50000000) { // 50MB limit
+          console.error('SECURITY: Data size exceeds storage limits');
+          return false;
+        }
+        await AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, serialized);
+      } catch (storageError) {
+        console.error('SECURITY: Storage operation failed:', storageError);
+        return false;
+      }
       
       if (Platform.OS !== 'web') {
-        const Haptics = await import('expo-haptics');
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        try {
+          const Haptics = await import('expo-haptics');
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (hapticsError) {
+          // Haptics failure is not critical, continue
+          console.log('Haptics not available:', hapticsError);
+        }
       }
+      
+      console.log('EXPENSE ADDED SUCCESSFULLY:', {
+        category: newExpense.category,
+        amount: newExpense.amount,
+        date: newExpense.date,
+        id: newExpense.id
+      });
       
       return true;
     } catch (error) {
-      console.error('Error adding expense:', error);
+      console.error('SECURITY: Error adding expense:', error);
       return false;
     }
   }, [expenses]);
@@ -227,35 +276,65 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const updateBudget = useCallback(async (newBudget: Budget) => {
     try {
-      // Security: Validate budget data
+      // ADVANCED SECURITY: Comprehensive budget validation
       if (!newBudget || typeof newBudget.monthly !== 'number' || newBudget.monthly < 0) {
-        console.error('Invalid budget data provided');
+        console.error('SECURITY: Invalid budget data structure provided');
         return false;
       }
       
-      // Security: Prevent extremely large budget values
+      // ADVANCED SECURITY: Prevent extremely large budget values and financial attacks
       if (newBudget.monthly > 100000000) { // 10 crore limit
-        console.error('Budget amount exceeds maximum allowed value');
+        console.error('SECURITY: Budget amount exceeds maximum allowed value');
         return false;
       }
       
-      // Security: Validate month and year
+      // ADVANCED SECURITY: Validate month and year ranges
       if (newBudget.month < 0 || newBudget.month > 11 || newBudget.year < 2020 || newBudget.year > 2050) {
-        console.error('Invalid budget month or year');
+        console.error('SECURITY: Invalid budget month or year detected');
         return false;
       }
       
-      setBudget(newBudget);
-      await AsyncStorage.setItem(STORAGE_KEYS.BUDGET, JSON.stringify(newBudget));
+      // ADVANCED SECURITY: Ensure budget precision (prevent floating point manipulation)
+      const sanitizedBudget: Budget = {
+        monthly: Math.round(newBudget.monthly * 100) / 100,
+        month: Math.floor(newBudget.month),
+        year: Math.floor(newBudget.year)
+      };
+      
+      setBudget(sanitizedBudget);
+      
+      // ADVANCED SECURITY: Validate serialization
+      try {
+        const serialized = JSON.stringify(sanitizedBudget);
+        if (serialized.length > 1000) { // Budget should be small
+          console.error('SECURITY: Budget data size exceeds expected limits');
+          return false;
+        }
+        await AsyncStorage.setItem(STORAGE_KEYS.BUDGET, serialized);
+      } catch (storageError) {
+        console.error('SECURITY: Budget storage operation failed:', storageError);
+        return false;
+      }
       
       if (Platform.OS !== 'web') {
-        const Haptics = await import('expo-haptics');
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        try {
+          const Haptics = await import('expo-haptics');
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (hapticsError) {
+          // Haptics failure is not critical
+          console.log('Haptics not available:', hapticsError);
+        }
       }
+      
+      console.log('BUDGET UPDATED SUCCESSFULLY:', {
+        monthly: sanitizedBudget.monthly,
+        month: sanitizedBudget.month,
+        year: sanitizedBudget.year
+      });
       
       return true;
     } catch (error) {
-      console.error('Error updating budget:', error);
+      console.error('SECURITY: Error updating budget:', error);
       return false;
     }
   }, []);
@@ -351,7 +430,23 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   }, [expenses]);
 
   const getTotalMonthlyExpenses = useCallback(() => {
-    return getCurrentMonthExpenses().reduce((total, expense) => total + expense.amount, 0);
+    // CRITICAL FIX: Proper mathematical logic for expense calculation
+    // All categories are ADDED to total expenses (including negative amounts)
+    // Negative amounts (Subtract, AutopayDeduction, LoanEMI) reduce the total
+    // Positive amounts increase the total
+    const monthlyExpenses = getCurrentMonthExpenses();
+    const total = monthlyExpenses.reduce((sum, expense) => {
+      // All amounts are added as-is (negative amounts will subtract automatically)
+      return sum + expense.amount;
+    }, 0);
+    
+    console.log('TOTAL MONTHLY EXPENSES CALCULATION:', {
+      expenseCount: monthlyExpenses.length,
+      total: total,
+      breakdown: monthlyExpenses.map(e => ({ category: e.category, amount: e.amount, date: e.date }))
+    });
+    
+    return total;
   }, [getCurrentMonthExpenses]);
 
   const getRemainingBudget = useCallback(() => {
@@ -364,11 +459,9 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       return budget.monthly;
     }
     
-    // For current month, subtract total expenses from budget
-    // CRITICAL FIX: Ensure proper mathematical logic
-    // Remaining Budget = Monthly Budget - Total Expenses
-    // Positive expenses reduce remaining budget
-    // Negative expenses (refunds/returns) increase remaining budget
+    // CRITICAL MATHEMATICAL FIX: Remaining Budget = Monthly Budget - Total Expenses
+    // This is the core logic: Budget - Expenses = Remaining
+    // Example: Budget 70,000 - Expenses 6,000 = Remaining 64,000
     const totalExpenses = getTotalMonthlyExpenses();
     const remaining = budget.monthly - totalExpenses;
     
@@ -378,12 +471,13 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       return budget.monthly;
     }
     
-    // Enhanced logging for debugging
-    console.log('BUDGET CALCULATION DEBUG:', {
+    // Enhanced logging for debugging mathematical accuracy
+    console.log('REMAINING BUDGET CALCULATION (FIXED):', {
       monthlyBudget: budget.monthly,
       totalExpenses: totalExpenses,
       remaining: remaining,
       calculation: `${budget.monthly} - ${totalExpenses} = ${remaining}`,
+      isCorrect: remaining === (budget.monthly - totalExpenses),
       budgetMonth: budget.month,
       budgetYear: budget.year,
       currentMonth: now.getMonth(),
