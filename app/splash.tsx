@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { IndianRupee } from 'lucide-react-native';
 import { useExpenseStore } from '../hooks/expense-store';
@@ -53,6 +53,12 @@ export default function SplashScreen() {
           <IndianRupee size={60} color="#25D366" strokeWidth={2} />
         </View>
         <Text style={styles.title}>HeeSaaBee</Text>
+        <TouchableOpacity 
+          onPress={() => router.push('/privacy')}
+          style={styles.privacyLink}
+        >
+          <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+        </TouchableOpacity>
         <Text style={styles.subtitle}>Track your expenses</Text>
       </Animated.View>
     </View>
@@ -89,5 +95,15 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#B0B0B0',
+  },
+  privacyLink: {
+    marginVertical: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  privacyLinkText: {
+    fontSize: 14,
+    color: '#25D366',
+    textDecorationLine: 'underline',
   },
 });
