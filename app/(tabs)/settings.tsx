@@ -27,7 +27,7 @@ import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
 export default function SettingsScreen() {
-  const { settings, updateSettings, clearAllData, clearDailyData, generateCSV, t } = useExpenseStore();
+  const { settings, updateSettings, clearAllData, generateCSV, t } = useExpenseStore();
 
   const handleLanguageToggle = () => {
     const newLanguage = settings.language === 'en' ? 'hi' : 'en';
@@ -38,14 +38,14 @@ export default function SettingsScreen() {
     updateSettings({ darkMode: !settings.darkMode });
   };
 
-  const handleClearData = () => {
+  const handleClearAllData = () => {
     Alert.alert(
-      'Clear Data',
-      t.confirmClear,
+      'Clear All Data',
+      'Are you sure you want to delete ALL expenses, budget, and EMI data? This action cannot be undone.',
       [
-        { text: t.no, style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         { 
-          text: t.yes, 
+          text: 'Delete All', 
           style: 'destructive',
           onPress: async () => {
             const success = await clearAllData();
@@ -100,8 +100,8 @@ export default function SettingsScreen() {
     },
     {
       icon: CalendarClock,
-      title: t.clearDailyData ?? 'Clear Daily Data',
-      subtitle: t.clearDailyDataSubtitle ?? "Delete today's entries only",
+      title: 'Clear Day Wise Data',
+      subtitle: 'Select and delete specific days data',
       onPress: () => router.push('/clear-days'),
       showChevron: true,
     },
@@ -189,9 +189,9 @@ export default function SettingsScreen() {
     },
     {
       icon: Trash2,
-      title: t.clearData,
-      subtitle: 'Delete all expenses and budget',
-      onPress: handleClearData,
+      title: 'Clear All Data',
+      subtitle: 'Delete all expenses, budget and EMI data',
+      onPress: handleClearAllData,
       showChevron: true,
       destructive: true,
     },
