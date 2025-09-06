@@ -5,10 +5,11 @@ import React from 'react';
       StyleSheet,
       ScrollView,
       TouchableOpacity,
-      Alert
+      Alert,
+      Platform
     } from 'react-native';
     import { router } from 'expo-router';
-    import { SafeAreaView } from 'react-native-safe-area-context';
+
     import {
       Plus,
       Download,
@@ -61,7 +62,7 @@ import React from 'react';
       };
 
       return (
-        <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
+        <View style={[styles.container, { backgroundColor: Colors.background }]}>
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
               <Text style={[styles.title, { color: Colors.text }]}>
@@ -182,7 +183,7 @@ import React from 'react';
               </View>
             )}
           </ScrollView>
-        </SafeAreaView>
+        </View>
       );
     }
 
@@ -192,7 +193,8 @@ import React from 'react';
       },
       scrollView: {
         flex: 1,
-        padding: 16,
+        padding: Platform.OS === 'android' ? 18 : 16, // Slightly more padding on Android
+        paddingBottom: Platform.OS === 'android' ? 24 : 16, // Extra bottom padding on Android
       },
       header: {
         flexDirection: 'row',
@@ -212,11 +214,22 @@ import React from 'react';
         marginBottom: 24,
       },
       summaryCard: {
-        padding: 20,
+        padding: Platform.OS === 'android' ? 18 : 20,
         borderRadius: 16,
-        marginBottom: 12,
+        marginBottom: Platform.OS === 'android' ? 14 : 12,
         borderWidth: 1,
         borderColor: Colors.border,
+        // Better visual hierarchy on mobile
+        ...(Platform.OS !== 'web' && {
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 1,
+          },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+          elevation: 2,
+        }),
       },
       cardHeader: {
         flexDirection: 'row',
@@ -236,9 +249,13 @@ import React from 'react';
         fontSize: 12,
       },
       chartCard: {
-        padding: 20,
+        padding: Platform.OS === 'android' ? 18 : 20,
         borderRadius: 16,
         marginBottom: 24,
+        // Better positioning and spacing for mobile
+        ...(Platform.OS !== 'web' && {
+          marginHorizontal: 2, // Slight margin for better visual spacing
+        }),
       },
       chartHeader: {
         flexDirection: 'row',
@@ -253,16 +270,27 @@ import React from 'react';
       quickActions: {
         flexDirection: 'row',
         gap: 12,
-        marginBottom: 24,
+        marginBottom: Platform.OS === 'android' ? 32 : 24, // More space on Android
       },
       actionButton: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
+        padding: Platform.OS === 'android' ? 18 : 16, // Slightly larger on Android
         borderRadius: 16,
         gap: 8,
+        // Better positioning for mobile platforms
+        ...(Platform.OS !== 'web' && {
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 3.84,
+          elevation: 5,
+        }),
       },
       actionButtonText: {
         fontSize: 16,

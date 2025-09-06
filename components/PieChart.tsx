@@ -14,32 +14,82 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
 
   const chartSize = useMemo(() => {
     if (size) return size;
-    if (width >= 1200) return 440;
-    if (width >= 1024) return 360;
-    if (width >= 768) return 320;
-    return Math.min(width * 0.86, 280);
+    // Platform-specific sizing for better positioning
+    if (Platform.OS === 'web') {
+      if (width >= 1200) return 440;
+      if (width >= 1024) return 360;
+      if (width >= 768) return 320;
+      return Math.min(width * 0.86, 280);
+    } else {
+      // Mobile platforms (iOS/Android) - optimized for mobile screens
+      if (width >= 768) return 300; // Tablet
+      return Math.min(width * 0.82, 260); // Phone - better fit
+    }
   }, [size, width]);
 
   const total = useMemo(() => Object.values(data).reduce((sum, value) => sum + value, 0), [data]);
 
-  const baseFont = width >= 1200 ? 18 : width >= 1024 ? 16 : width >= 768 ? 15 : 14;
-  const desiredInnerRadius = Math.ceil(baseFont * (Platform.OS === 'web' ? 3.6 : 3.4));
+  const baseFont = useMemo(() => {
+    if (Platform.OS === 'web') {
+      return width >= 1200 ? 18 : width >= 1024 ? 16 : width >= 768 ? 15 : 14;
+    } else {
+      // Mobile platforms - slightly smaller fonts for better fit
+      return width >= 768 ? 15 : 13;
+    }
+  }, [width]);
+  
+  const desiredInnerRadius = Math.ceil(baseFont * (Platform.OS === 'web' ? 3.6 : 3.2));
 
-  let computedStroke = Math.floor(
-    chartSize * (width >= 1200 ? 0.18 : width >= 1024 ? 0.17 : width >= 768 ? 0.16 : 0.135)
-  );
-  computedStroke = Math.max(10, Math.min(width >= 1024 ? 40 : 30, computedStroke));
+  let computedStroke = useMemo(() => {
+    if (Platform.OS === 'web') {
+      const stroke = Math.floor(
+        chartSize * (width >= 1200 ? 0.18 : width >= 1024 ? 0.17 : width >= 768 ? 0.16 : 0.135)
+      );
+      return Math.max(10, Math.min(width >= 1024 ? 40 : 30, stroke));
+    } else {
+      // Mobile platforms - optimized stroke width
+      const stroke = Math.floor(chartSize * 0.14);
+      return Math.max(8, Math.min(25, stroke));
+    }
+  }, [chartSize, width]);
 
-  const innerRadius = chartSize / 2 - computedStroke;
-  if (innerRadius < desiredInnerRadius) {
-    const neededStroke = Math.max(10, chartSize / 2 - desiredInnerRadius);
-    computedStroke = Math.min(computedStroke, neededStroke);
-  }
+  const adjustedStroke = useMemo(() => {
+    const innerRadius = chartSize / 2 - computedStroke;
+    if (innerRadius < desiredInnerRadius) {
+      const neededStroke = Math.max(Platform.OS === 'web' ? 10 : 8, chartSize / 2 - desiredInnerRadius);
+      return Math.min(computedStroke, neededStroke);
+    }
+    return computedStroke;
+  }, [chartSize, computedStroke, desiredInnerRadius]);
 
-  const finalRadius = chartSize / 2 - computedStroke / 2;
+  const finalRadius = chartSize / 2 - adjustedStroke / 2;
   const circumference = 2 * Math.PI * finalRadius;
 
   const entries = useMemo(() => Object.entries(data), [data]);
+
+  const legendTextSize = useMemo(() => {
+    if (Platform.OS === 'web') {
+      return width >= 1200 ? 17 : width >= 1024 ? 16 : width >= 768 ? 15 : 14;
+    } else {
+      return width >= 768 ? 14 : 12;
+    }
+  }, [width]);
+  
+  const legendRowGap = useMemo(() => {
+    if (Platform.OS === 'web') {
+      return width >= 1200 ? 14 : width >= 1024 ? 12 : width >= 768 ? 10 : 8;
+    } else {
+      return width >= 768 ? 10 : 6;
+    }
+  }, [width]);
+  
+  const legendColGap = useMemo(() => {
+    if (Platform.OS === 'web') {
+      return width >= 1200 ? 22 : width >= 1024 ? 18 : width >= 768 ? 16 : 12;
+    } else {
+      return width >= 768 ? 16 : 10;
+    }
+  }, [width]);
 
   if (total === 0) {
     return (
@@ -71,13 +121,8 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
     .map(([category]) => category);
 
   const epsilon = circumference * 0.005;
-
-  const innerDiameter = chartSize - 2 * computedStroke;
+  const innerDiameter = chartSize - 2 * adjustedStroke;
   const labelMaxWidth = Math.max(0, innerDiameter - 16);
-
-  const legendTextSize = width >= 1200 ? 17 : width >= 1024 ? 16 : width >= 768 ? 15 : 14;
-  const legendRowGap = width >= 1200 ? 14 : width >= 1024 ? 12 : width >= 768 ? 10 : 8;
-  const legendColGap = width >= 1200 ? 22 : width >= 1024 ? 18 : width >= 768 ? 16 : 12;
 
   return (
     <View style={[styles.container, { width: chartSize }]} testID="piechart-container">
@@ -89,7 +134,7 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
             <Circle
               r={finalRadius}
               stroke={Colors.border}
-              strokeWidth={computedStroke}
+              strokeWidth={adjustedStroke}
               fill="transparent"
               opacity={0.35}
               transform={`rotate(-90)`}
@@ -99,7 +144,7 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
                 key={segment.category}
                 r={finalRadius}
                 stroke={segment.color}
-                strokeWidth={computedStroke}
+                strokeWidth={adjustedStroke}
                 fill="transparent"
                 strokeDasharray={segment.strokeDasharray}
                 strokeDashoffset={segment.strokeDashoffset}
@@ -115,7 +160,7 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
                   key={`zero-${category}`}
                   r={finalRadius}
                   stroke={color}
-                  strokeWidth={computedStroke}
+                  strokeWidth={adjustedStroke}
                   fill="transparent"
                   opacity={0.3}
                   strokeDasharray={`${epsilon} ${circumference}`}

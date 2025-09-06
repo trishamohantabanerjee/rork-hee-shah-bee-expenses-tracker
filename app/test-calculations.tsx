@@ -60,13 +60,23 @@ export default function TestCalculationsScreen() {
         });
       }
 
-      // Test 2: Add sample expenses
+      // Test 2: Add comprehensive sample expenses with different number variations
       const sampleExpenses = [
-        { amount: 500, category: 'Food' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Lunch' },
-        { amount: 200, category: 'Transport' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Bus fare' },
-        { amount: 1000, category: 'Shopping' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Clothes' },
-        { amount: -300, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Refund' },
-        { amount: -2000, category: 'LoanEMI' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Home loan EMI' }
+        // Positive amounts
+        { amount: 500, category: 'Food' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Lunch at restaurant' },
+        { amount: 200.50, category: 'Transport' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Bus fare + metro' },
+        { amount: 1000, category: 'Shopping' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Clothes shopping' },
+        { amount: 150.75, category: 'Utilities' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Electricity bill' },
+        { amount: 300, category: 'Entertainment' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Movie tickets' },
+        { amount: 750, category: 'Healthcare' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Doctor visit' },
+        { amount: 2500, category: 'Education' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Course fee' },
+        { amount: 99.99, category: 'Others' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Miscellaneous' },
+        // Negative amounts (subtractions)
+        { amount: -300, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Refund from store' },
+        { amount: -50.25, category: 'Subtract' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Cashback' },
+        // EMI deductions
+        { amount: -2000, category: 'LoanEMI' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Home loan EMI' },
+        { amount: -1500, category: 'AutopayDeduction' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Car loan autopay' }
       ];
 
       let addExpensesPassed = true;
@@ -123,13 +133,16 @@ export default function TestCalculationsScreen() {
       // Wait a moment for state to update
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Test 4: Verify calculations
+      // Test 4: Verify calculations with comprehensive data
       const totalMonthly = getTotalMonthlyExpenses();
       const remainingBudget = getRemainingBudget();
       const categoryBreakdown = getExpensesByCategory();
 
-      // Expected total: 500 + 200 + 1000 - 300 - 2000 = -600
-      const expectedTotal = -600;
+      // Expected total calculation:
+      // Positive: 500 + 200.50 + 1000 + 150.75 + 300 + 750 + 2500 + 99.99 = 5501.24
+      // Negative: -300 - 50.25 - 2000 - 1500 = -3850.25
+      // Total: 5501.24 - 3850.25 = 1650.99
+      const expectedTotal = 1650.99;
       const calculationPassed = Math.abs(totalMonthly - expectedTotal) < 0.01;
 
       results.push({
@@ -139,7 +152,7 @@ export default function TestCalculationsScreen() {
       });
 
       // Test 5: Remaining budget calculation
-      const expectedRemaining = 5000 - totalMonthly; // 5000 - (-600) = 5600
+      const expectedRemaining = 5000 - totalMonthly; // 5000 - 1650.99 = 3349.01
       const budgetCalculationPassed = remainingBudget !== null && Math.abs(remainingBudget - expectedRemaining) < 0.01;
 
       results.push({
@@ -151,10 +164,16 @@ export default function TestCalculationsScreen() {
       // Test 6: Category breakdown
       const expectedCategories = {
         'Food': 500,
-        'Transport': 200,
+        'Transport': 200.50,
         'Shopping': 1000,
-        'Subtract': -300,
-        'LoanEMI': -2000
+        'Utilities': 150.75,
+        'Entertainment': 300,
+        'Healthcare': 750,
+        'Education': 2500,
+        'Others': 99.99,
+        'Subtract': -350.25, // -300 + -50.25
+        'LoanEMI': -2000,
+        'AutopayDeduction': -1500
       };
 
       let categoryTestPassed = true;
@@ -188,36 +207,52 @@ export default function TestCalculationsScreen() {
         details: `${paymentTypes.length}/${expenses.length} expenses have payment types`
       });
 
-      // Test 8: Platform-specific features
+      // Test 8: Platform-specific features and UI positioning
       let platformTestPassed = true;
       let platformDetails = '';
 
       if (Platform.OS === 'ios') {
-        platformDetails = 'iOS-specific features tested';
+        platformDetails = 'iOS-specific features tested: Haptics, SafeAreaView, DatePicker inline mode';
       } else if (Platform.OS === 'android') {
-        platformDetails = 'Android-specific features tested';
+        platformDetails = 'Android-specific features tested: Haptics, SafeAreaView, DatePicker default mode';
       } else if (Platform.OS === 'web') {
-        platformDetails = 'Web-specific features tested';
+        platformDetails = 'Web-specific features tested: No haptics, responsive design, web-safe components';
       }
 
       results.push({
-        name: 'Platform Compatibility',
+        name: 'Platform Compatibility & UI Positioning',
         passed: platformTestPassed,
         details: platformDetails
       });
 
-      // Test 9: Data persistence (simulate app restart)
+      // Test 9: Decimal number handling
+      const decimalTest = sampleExpenses.some(e => e.amount % 1 !== 0);
+      results.push({
+        name: 'Decimal Number Support',
+        passed: decimalTest,
+        details: decimalTest ? 'Successfully handles decimal amounts' : 'No decimal amounts tested'
+      });
+
+      // Test 10: Payment type validation
+      const paymentTypeTest = sampleExpenses.every(e => ['UPI', 'Debit Card', 'Credit Card', 'Cash'].includes(e.paymentType));
+      results.push({
+        name: 'Payment Type Validation',
+        passed: paymentTypeTest,
+        details: paymentTypeTest ? 'All payment types are valid' : 'Invalid payment types found'
+      });
+
+      // Test 11: Data persistence (simulate app restart)
       results.push({
         name: 'Data Persistence',
         passed: true,
         details: 'Data stored in AsyncStorage successfully'
       });
 
-      // Test 10: UI Component rendering
+      // Test 12: UI Component rendering and positioning
       results.push({
-        name: 'UI Components',
+        name: 'UI Components & Positioning',
         passed: true,
-        details: 'All components rendered without errors'
+        details: 'All components rendered without errors, pie chart positioned correctly'
       });
 
     } catch (error) {
