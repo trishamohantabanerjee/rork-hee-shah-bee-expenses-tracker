@@ -201,7 +201,7 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
             <View key={category} style={[styles.legendItem, { marginRight: legendColGap, marginVertical: legendRowGap / 4 }]}>
               <View style={[styles.legendColor, { backgroundColor: color, opacity: isZero ? 0.3 : 1 }]} />
               <Text style={[styles.legendText, { fontSize: legendTextSize }, isZero ? styles.legendTextZero : null]}>
-                {category}: ₹{amount.toLocaleString()}
+                {category}: ₹{Math.abs(amount).toLocaleString()}
               </Text>
             </View>
           );

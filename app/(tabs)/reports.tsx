@@ -39,7 +39,15 @@ export default function ReportsScreen() {
   };
 
   const filteredExpenses = getFilteredExpenses();
-  const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalAmount = filteredExpenses.reduce((sum, expense) => {
+    // CRITICAL FIX: Apply same mathematical logic as store
+    // All categories are ADDED except "Subtract" category
+    if (expense.category === 'Subtract') {
+      return sum - Math.abs(expense.amount);
+    } else {
+      return sum + Math.abs(expense.amount);
+    }
+  }, 0);
   const categoryData = getExpensesByCategory();
   const monthlyEMITotal = getMonthlyEMITotal();
 
@@ -106,7 +114,7 @@ export default function ReportsScreen() {
               />
             </View>
             <Text style={styles.barLabel}>{category}</Text>
-            <Text style={styles.barValue}>₹{amount.toLocaleString()}</Text>
+            <Text style={styles.barValue}>₹{Math.abs(amount).toLocaleString()}</Text>
           </View>
         ))}
       </View>
@@ -194,7 +202,9 @@ export default function ReportsScreen() {
                   )}
                   <Text style={styles.expensePayment}>Payment: {expense.paymentType || 'Cash'}</Text>
                 </View>
-                <Text style={styles.expenseAmount}>₹{expense.amount.toLocaleString()}</Text>
+                <Text style={styles.expenseAmount}>
+                  {expense.category === 'Subtract' ? '-' : ''}₹{Math.abs(expense.amount).toLocaleString()}
+                </Text>
               </View>
             ))}
           </View>

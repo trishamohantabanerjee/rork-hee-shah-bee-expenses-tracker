@@ -262,7 +262,7 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
                       </Text>
                     </View>
                     <Text style={[styles.expenseAmount, { color: Colors.text }]}>
-                      ₹{expense.amount.toLocaleString()}
+                      {expense.category === 'Subtract' ? '-' : ''}₹{Math.abs(expense.amount).toLocaleString()}
                     </Text>
                   </View>
                 ))}

@@ -82,11 +82,13 @@ export default function TestCalculationsScreen() {
         { amount: 50.25, category: 'Subtract' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Cashback' },
         { amount: 0.50, category: 'Subtract' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Small refund' },
         { amount: 10000, category: 'Subtract' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large refund' },
-        // AutopayDeduction and LoanEMI categories (now ADDED to expenses, not subtracted)
+        // AutopayDeduction, LoanEMI, and Investment/MF/SIP categories (now ADDED to expenses, not subtracted)
         { amount: 2000, category: 'LoanEMI' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Home loan EMI' },
         { amount: 1500, category: 'AutopayDeduction' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Car loan autopay' },
         { amount: 500.75, category: 'LoanEMI' as CategoryType, paymentType: 'Cash' as PaymentType, notes: 'Small EMI' },
-        { amount: 25000, category: 'AutopayDeduction' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large autopay' }
+        { amount: 25000, category: 'AutopayDeduction' as CategoryType, paymentType: 'Credit Card' as PaymentType, notes: 'Large autopay' },
+        { amount: 5000, category: 'Investment/MF/SIP' as CategoryType, paymentType: 'UPI' as PaymentType, notes: 'Monthly SIP investment' },
+        { amount: 1000.50, category: 'Investment/MF/SIP' as CategoryType, paymentType: 'Debit Card' as PaymentType, notes: 'Mutual fund investment' }
       ];
 
       let addExpensesPassed = true;
@@ -115,7 +117,7 @@ export default function TestCalculationsScreen() {
       results.push({
         name: 'Add Expenses (Varied Numbers)',
         passed: addExpensesPassed && addedCount === sampleExpenses.length,
-        details: `Added ${addedCount}/${sampleExpenses.length} expenses with varied numbers (decimals, large/small amounts, AutopayDeduction & LoanEMI now ADDED)`
+        details: `Added ${addedCount}/${sampleExpenses.length} expenses with varied numbers (decimals, large/small amounts, AutopayDeduction, LoanEMI & Investment/MF/SIP now ADDED)`
       });
 
       // Test 3: Set budget with realistic amount for testing
@@ -276,7 +278,8 @@ ${mathValidation.isCorrect ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
       const subtractExpenses = sampleExpenses.filter(e => e.category === 'Subtract');
       const autopayExpenses = sampleExpenses.filter(e => e.category === 'AutopayDeduction');
       const emiExpenses = sampleExpenses.filter(e => e.category === 'LoanEMI');
-      const otherExpenses = sampleExpenses.filter(e => !['Subtract', 'AutopayDeduction', 'LoanEMI'].includes(e.category));
+      const investmentExpenses = sampleExpenses.filter(e => e.category === 'Investment/MF/SIP');
+      const otherExpenses = sampleExpenses.filter(e => !['Subtract', 'AutopayDeduction', 'LoanEMI', 'Investment/MF/SIP'].includes(e.category));
       
       results.push({
         name: 'CRITICAL: Updated Math Logic (AutopayDeduction & LoanEMI now ADDED)',
@@ -286,8 +289,8 @@ ${mathValidation.isCorrect ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
 📉 Subtracted Total: ₹${subtractedTotal.toLocaleString()} (${subtractedExpenses.length} items)
 🎯 Net Result: ₹${netTotal.toLocaleString()}
 ✅ Expected: ₹${expectedTotal.toLocaleString()} | Actual: ₹${totalMonthly.toLocaleString()}
-📊 Categories: Subtract(${subtractExpenses.length}) | EMI(${emiExpenses.length}) | Autopay(${autopayExpenses.length}) | Others(${otherExpenses.length})
-🔄 AutopayDeduction & LoanEMI are now ADDED to expenses
+📊 Categories: Subtract(${subtractExpenses.length}) | EMI(${emiExpenses.length}) | Autopay(${autopayExpenses.length}) | Investment(${investmentExpenses.length}) | Others(${otherExpenses.length})
+🔄 AutopayDeduction, LoanEMI & Investment/MF/SIP are now ADDED to expenses
 ${negativeCalculationPassed ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
       });
 
@@ -386,7 +389,7 @@ ${expenses.map(e => `"${e.date}"\t"${e.category}"\t"${e.paymentType || 'Cash'}"\
       results.push({
         name: '🧮 ADVANCED Mathematical Logic Verification',
         passed: advancedMathTest.isCorrectLogic,
-        details: `📊 SCREENSHOT VERIFICATION:\n• Budget: ₹75,000 (matches screenshot)\n• Spent: ₹${totalMonthly.toLocaleString()}\n• Remaining: ₹${remainingBudget?.toLocaleString() || 'null'}\n• Expected: ₹${advancedMathTest.expectedRemaining.toLocaleString()}\n\n🔢 FORMULA: ${advancedMathTest.formula}\n📱 USER EXAMPLE: ${advancedMathTest.userExample}\n\n${advancedMathTest.isCorrectLogic ? '✅ MATH LOGIC PERFECT' : '❌ MATH LOGIC ERROR'}\n\n🎯 CATEGORY LOGIC:\n• All categories ADDED except 'Subtract'\n• AutopayDeduction & LoanEMI now ADDED (not subtracted)\n• Only 'Subtract' category is subtracted from total`
+        details: `📊 SCREENSHOT VERIFICATION:\n• Budget: ₹75,000 (matches screenshot)\n• Spent: ₹${totalMonthly.toLocaleString()}\n• Remaining: ₹${remainingBudget?.toLocaleString() || 'null'}\n• Expected: ₹${advancedMathTest.expectedRemaining.toLocaleString()}\n\n🔢 FORMULA: ${advancedMathTest.formula}\n📱 USER EXAMPLE: ${advancedMathTest.userExample}\n\n${advancedMathTest.isCorrectLogic ? '✅ MATH LOGIC PERFECT' : '❌ MATH LOGIC ERROR'}\n\n🎯 CATEGORY LOGIC:\n• All categories ADDED except 'Subtract'\n• AutopayDeduction, LoanEMI & Investment/MF/SIP now ADDED (not subtracted)\n• Only 'Subtract' category is subtracted from total`
       });
 
       // Test 21: Comprehensive Component Testing

@@ -70,7 +70,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
               Math.abs(expense.amount) <= 10000000 && // Validate amount range
               /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(expense.date) && // Strict date format
               new Date(expense.date) <= new Date() && // No future dates
-              ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI'].includes(expense.category) &&
+              ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI', 'Investment/MF/SIP'].includes(expense.category) &&
               (!expense.paymentType || ['UPI', 'Debit Card', 'Credit Card', 'Cash'].includes(expense.paymentType))
             );
             setExpenses(validExpenses);
@@ -187,7 +187,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       }
       
       // ADVANCED SECURITY: Validate category against allowed types with strict check
-      const allowedCategories = ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI'];
+      const allowedCategories = ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI', 'Investment/MF/SIP'];
       if (!allowedCategories.includes(expense.category)) {
         console.error('SECURITY: Invalid category detected');
         return false;
@@ -563,7 +563,21 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     const categoryTotals: Record<string, number> = {};
     
     monthlyExpenses.forEach(expense => {
-      categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
+      // CRITICAL FIX: Apply same mathematical logic as total calculation
+      // All categories show positive amounts except "Subtract" category
+      if (expense.category === 'Subtract') {
+        // Subtract category: show negative amount
+        categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) - Math.abs(expense.amount);
+      } else {
+        // All other categories (including AutopayDeduction, LoanEMI, Investment/MF/SIP): show positive amount
+        categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + Math.abs(expense.amount);
+      }
+    });
+    
+    console.log('CATEGORY BREAKDOWN WITH CORRECT LOGIC:', {
+      categoryTotals,
+      logic: 'All categories show positive amounts except Subtract (negative)',
+      expenseCount: monthlyExpenses.length
     });
     
     return categoryTotals;

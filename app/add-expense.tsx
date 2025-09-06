@@ -45,6 +45,7 @@ import React, { useState } from 'react';
           Subtract: Minus,
           AutopayDeduction: CreditCard,
           LoanEMI: IndianRupee,
+          'Investment/MF/SIP': IndianRupee,
         };
 
         const paymentOptions: PaymentType[] = ['UPI', 'Debit Card', 'Credit Card', 'Cash'];
@@ -70,7 +71,9 @@ import React, { useState } from 'react';
               const { amount, notes, paymentType } = categoryData[cat];
               const numAmount = parseFloat(amount);
               if (numAmount > 0) {
-                const finalAmount = cat === 'Subtract' || cat === 'AutopayDeduction' || cat === 'LoanEMI' ? -numAmount : numAmount;
+                // CRITICAL FIX: Only "Subtract" category should be negative
+                // AutopayDeduction, LoanEMI, and Investment/MF/SIP should be positive (they are added to expenses)
+                const finalAmount = cat === 'Subtract' ? -numAmount : numAmount;
                 expensesToAdd.push({ category: cat, amount: finalAmount, paymentType, notes });
               }
             });
@@ -128,7 +131,7 @@ import React, { useState } from 'react';
             }));
           };
 
-          // Reordered categories: Subtract, AutopayDeduction, LoanEMI centered in the middle
+          // Reordered categories: Subtract, AutopayDeduction, LoanEMI, Investment/MF/SIP centered in the middle
           const allCategories: CategoryType[] = [
             'Food',
             'Transport',
@@ -138,6 +141,7 @@ import React, { useState } from 'react';
             'Subtract',
             'AutopayDeduction',
             'LoanEMI',
+            'Investment/MF/SIP',
             'Healthcare',
             'Education',
             'Others',
