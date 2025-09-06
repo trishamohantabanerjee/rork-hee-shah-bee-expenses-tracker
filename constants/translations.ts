@@ -58,7 +58,7 @@ export const translations = {
       Subtract: 'Subtract',
       AutopayDeduction: 'Autopay Deduction',
       LoanEMI: 'Loan EMI',
-      'Investment/MF/SIP': 'Investment/MF/SIP',
+      'Investment/MF/SIP': 'Investment\nMF/SIP',
     },
   },
   hi: {
@@ -120,7 +120,7 @@ export const translations = {
       Subtract: 'घटाएं',
       AutopayDeduction: 'ऑटोपे कटौती',
       LoanEMI: 'लोन ईएमआई',
-      'Investment/MF/SIP': 'निवेश/एमएफ/एसआईपी',
+      'Investment/MF/SIP': 'निवेश\nएमएफ/एसआईपी',
     },
   },
 } as const;

@@ -42,6 +42,7 @@ const categoryIcons: Record<CategoryType, React.ComponentType<any>> = {
   Subtract: Minus,
   AutopayDeduction: CreditCard,
   LoanEMI: IndianRupee,
+  'Investment/MF/SIP': IndianRupee,
 };
 
 interface CategoryRowProps {
@@ -138,6 +139,7 @@ export default function SummaryScreen() {
     'Subtract',
     'AutopayDeduction',
     'LoanEMI',
+    'Investment/MF/SIP',
   ];
 
   React.useEffect(() => {

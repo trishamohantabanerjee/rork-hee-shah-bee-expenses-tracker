@@ -337,10 +337,12 @@ import React, { useState } from 'react';
             marginRight: 8,
           },
           categoryName: {
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: '600',
             color: Colors.text,
             flex: 1,
+            textAlign: 'center',
+            lineHeight: 16,
           },
           inputGroup: {
             marginBottom: 12,
