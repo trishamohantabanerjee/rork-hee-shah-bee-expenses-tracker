@@ -196,8 +196,8 @@ ${monthlyExpenses.length} transactions`;
       },
       scrollView: {
         flex: 1,
-        padding: Platform.OS === 'android' ? 18 : 16, // Slightly more padding on Android
-        paddingBottom: Platform.OS === 'android' ? 24 : 16, // Extra bottom padding on Android
+        padding: Platform.OS === 'android' ? 20 : 16, // Better padding on Android
+        paddingBottom: Platform.OS === 'android' ? 32 : 20, // More bottom padding on Android
       },
       header: {
         flexDirection: 'row',

@@ -22,8 +22,9 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
       return Math.min(width * 0.86, 280);
     } else {
       // Mobile platforms (iOS/Android) - optimized for mobile screens
-      if (width >= 768) return 300; // Tablet
-      return Math.min(width * 0.82, 260); // Phone - better fit
+      if (width >= 768) return 280; // Tablet - reduced size
+      // Better sizing for mobile phones with proper centering
+      return Math.min(width * 0.75, 240); // Reduced from 0.82 and 260 for better fit
     }
   }, [size, width]);
 

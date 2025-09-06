@@ -290,10 +290,24 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   const getRemainingBudget = useCallback(() => {
     if (!budget) return null;
     const now = new Date();
+    // Always calculate remaining budget for current month
+    // If budget is for a different month/year, return the full budget amount
     if (budget.year !== now.getFullYear() || budget.month !== now.getMonth()) {
       return budget.monthly;
     }
-    return budget.monthly - getTotalMonthlyExpenses();
+    // For current month, subtract expenses from budget
+    const totalExpenses = getTotalMonthlyExpenses();
+    const remaining = budget.monthly - totalExpenses;
+    console.log('Budget calculation:', {
+      monthlyBudget: budget.monthly,
+      totalExpenses,
+      remaining,
+      budgetMonth: budget.month,
+      budgetYear: budget.year,
+      currentMonth: now.getMonth(),
+      currentYear: now.getFullYear()
+    });
+    return remaining;
   }, [budget, getTotalMonthlyExpenses]);
 
   const getExpensesByCategory = useCallback(() => {

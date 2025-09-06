@@ -118,18 +118,18 @@ export default function TestCalculationsScreen() {
         details: `Added ${addedCount}/${sampleExpenses.length} expenses with varied numbers (decimals, large/small amounts, negatives)`
       });
 
-      // Test 3: Set budget
+      // Test 3: Set budget with realistic amount for testing
       try {
         const now = new Date();
         const success = await updateBudget({
-          monthly: 5000,
+          monthly: 75000, // Set to 75,000 to match user's scenario
           year: now.getFullYear(),
           month: now.getMonth()
         });
         results.push({
           name: 'Set Budget',
           passed: success,
-          details: success ? 'Budget set to ₹5,000' : 'Failed to set budget'
+          details: success ? 'Budget set to ₹75,000' : 'Failed to set budget'
         });
       } catch (error) {
         results.push({
@@ -162,7 +162,7 @@ export default function TestCalculationsScreen() {
       });
 
       // Test 5: Remaining budget calculation
-      const expectedRemaining = 5000 - totalMonthly;
+      const expectedRemaining = 75000 - totalMonthly; // Updated to match the 75,000 budget
       const budgetCalculationPassed = remainingBudget !== null && Math.abs(remainingBudget - expectedRemaining) < 0.01;
 
       results.push({
