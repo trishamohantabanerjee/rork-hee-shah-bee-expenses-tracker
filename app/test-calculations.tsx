@@ -122,14 +122,14 @@ export default function TestCalculationsScreen() {
       try {
         const now = new Date();
         const success = await updateBudget({
-          monthly: 70000, // Set to 70,000 to match user's screenshot
+          monthly: 75000, // Set to 75,000 to match user's screenshot exactly
           year: now.getFullYear(),
           month: now.getMonth()
         });
         results.push({
           name: 'Set Budget',
           passed: success,
-          details: success ? 'Budget set to ₹70,000 (matching user screenshot)' : 'Failed to set budget'
+          details: success ? 'Budget set to ₹75,000 (matching user screenshot exactly)' : 'Failed to set budget'
         });
       } catch (error) {
         results.push({
@@ -162,14 +162,14 @@ export default function TestCalculationsScreen() {
       });
 
       // Test 5: Remaining budget calculation (CRITICAL FIX)
-      const expectedRemaining = 70000 - totalMonthly; // Budget - Total Expenses (70k from screenshot)
+      const expectedRemaining = 75000 - totalMonthly; // Budget - Total Expenses (75k from screenshot)
       const budgetCalculationPassed = remainingBudget !== null && Math.abs(remainingBudget - expectedRemaining) < 0.01;
       
       // Additional validation for the mathematical logic
       const mathValidation = {
-        budget: 70000,
+        budget: 75000,
         totalExpenses: totalMonthly,
-        calculatedRemaining: 70000 - totalMonthly,
+        calculatedRemaining: 75000 - totalMonthly,
         actualRemaining: remainingBudget,
         isCorrect: budgetCalculationPassed
       };
@@ -177,7 +177,7 @@ export default function TestCalculationsScreen() {
       results.push({
         name: 'Remaining Budget Calculation (FIXED)',
         passed: budgetCalculationPassed,
-        details: `Budget: ₹70,000 | Spent: ₹${totalMonthly.toLocaleString()} | Expected Remaining: ₹${expectedRemaining.toLocaleString()} | Actual: ₹${remainingBudget?.toLocaleString() || 'null'} | Math Check: ${mathValidation.isCorrect ? '✅' : '❌'}`
+        details: `Budget: ₹75,000 | Spent: ₹${totalMonthly.toLocaleString()} | Expected Remaining: ₹${expectedRemaining.toLocaleString()} | Actual: ₹${remainingBudget?.toLocaleString() || 'null'} | Math Check: ${mathValidation.isCorrect ? '✅' : '❌'}`
       });
 
       // Test 6: Category breakdown with varied amounts

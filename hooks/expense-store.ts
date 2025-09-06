@@ -357,13 +357,18 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   const getRemainingBudget = useCallback(() => {
     if (!budget) return null;
     const now = new Date();
+    
     // Always calculate remaining budget for current month
     // If budget is for a different month/year, return the full budget amount
     if (budget.year !== now.getFullYear() || budget.month !== now.getMonth()) {
       return budget.monthly;
     }
-    // For current month, subtract expenses from budget
-    // Handle negative expenses properly (refunds/returns should increase remaining budget)
+    
+    // For current month, subtract total expenses from budget
+    // CRITICAL FIX: Ensure proper mathematical logic
+    // Remaining Budget = Monthly Budget - Total Expenses
+    // Positive expenses reduce remaining budget
+    // Negative expenses (refunds/returns) increase remaining budget
     const totalExpenses = getTotalMonthlyExpenses();
     const remaining = budget.monthly - totalExpenses;
     
@@ -373,15 +378,19 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       return budget.monthly;
     }
     
-    console.log('Budget calculation:', {
+    // Enhanced logging for debugging
+    console.log('BUDGET CALCULATION DEBUG:', {
       monthlyBudget: budget.monthly,
-      totalExpenses,
-      remaining,
+      totalExpenses: totalExpenses,
+      remaining: remaining,
+      calculation: `${budget.monthly} - ${totalExpenses} = ${remaining}`,
       budgetMonth: budget.month,
       budgetYear: budget.year,
       currentMonth: now.getMonth(),
-      currentYear: now.getFullYear()
+      currentYear: now.getFullYear(),
+      isCurrentMonth: budget.year === now.getFullYear() && budget.month === now.getMonth()
     });
+    
     return remaining;
   }, [budget, getTotalMonthlyExpenses]);
 

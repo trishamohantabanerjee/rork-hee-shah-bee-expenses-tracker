@@ -255,9 +255,24 @@ ${monthlyExpenses.length} transactions`;
         padding: Platform.OS === 'android' ? 18 : 20,
         borderRadius: 16,
         marginBottom: 24,
-        // Better positioning and spacing for mobile
+        // IMPROVED positioning and spacing for mobile platforms
         ...(Platform.OS !== 'web' && {
-          marginHorizontal: 2, // Slight margin for better visual spacing
+          marginHorizontal: 4, // Better margin for visual spacing
+          alignSelf: 'center', // Center the chart card
+          maxWidth: '100%', // Prevent overflow
+        }),
+        // Additional styling for better UI/UX
+        borderWidth: 1,
+        borderColor: Colors.border,
+        ...(Platform.OS !== 'web' && {
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 1,
+          },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+          elevation: 2,
         }),
       },
       chartHeader: {

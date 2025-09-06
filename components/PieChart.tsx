@@ -14,17 +14,18 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
 
   const chartSize = useMemo(() => {
     if (size) return size;
-    // Platform-specific sizing for better positioning
+    // Platform-specific sizing for better positioning and UI/UX
     if (Platform.OS === 'web') {
       if (width >= 1200) return 440;
       if (width >= 1024) return 360;
       if (width >= 768) return 320;
       return Math.min(width * 0.86, 280);
     } else {
-      // Mobile platforms (iOS/Android) - optimized for mobile screens
-      if (width >= 768) return 280; // Tablet - reduced size
-      // Better sizing for mobile phones with proper centering
-      return Math.min(width * 0.75, 240); // Reduced from 0.82 and 260 for better fit
+      // Mobile platforms (iOS/Android) - IMPROVED positioning and sizing
+      if (width >= 768) return 260; // Tablet - better fit
+      // CRITICAL FIX: Better sizing for mobile phones with proper centering
+      // Reduced size to prevent overflow and improve positioning
+      return Math.min(width * 0.70, 220); // Further reduced for better mobile fit
     }
   }, [size, width]);
 
