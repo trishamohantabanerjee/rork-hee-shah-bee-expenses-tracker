@@ -122,14 +122,14 @@ export default function TestCalculationsScreen() {
       try {
         const now = new Date();
         const success = await updateBudget({
-          monthly: 70000, // Set to 70,000 as per user's example (70k budget - 6k expenses = 64k remaining)
+          monthly: 75000, // Set to 75,000 as shown in screenshot
           year: now.getFullYear(),
           month: now.getMonth()
         });
         results.push({
           name: 'Set Budget (User Example)',
           passed: success,
-          details: success ? 'Budget set to ₹70,000 (as per user example: 70k - 6k = 64k remaining)' : 'Failed to set budget'
+          details: success ? 'Budget set to ₹75,000 (as shown in screenshot)' : 'Failed to set budget'
         });
       } catch (error) {
         results.push({
@@ -166,26 +166,26 @@ export default function TestCalculationsScreen() {
       });
 
       // Test 5: CRITICAL MATHEMATICAL LOGIC TEST - Remaining budget calculation
-      const expectedRemaining = 70000 - totalMonthly; // Budget - Total Expenses (70k as per user example)
+      const expectedRemaining = 75000 - totalMonthly; // Budget - Total Expenses (75k as shown in screenshot)
       const budgetCalculationPassed = remainingBudget !== null && Math.abs(remainingBudget - expectedRemaining) < 0.01;
       
       // COMPREHENSIVE mathematical validation
       const mathValidation = {
-        budget: 70000,
+        budget: 75000,
         totalExpenses: totalMonthly,
         calculatedRemaining: 70000 - totalMonthly,
         actualRemaining: remainingBudget,
         isCorrect: budgetCalculationPassed,
         formula: 'Monthly Budget - Total Expenses = Remaining Budget',
-        example: '70,000 - 6,000 = 64,000 (as per user requirement)'
+        example: '75,000 - 6,000 = 69,000 (as per user requirement)'
       };
 
       results.push({
         name: 'CRITICAL: Remaining Budget Math (FIXED)',
         passed: budgetCalculationPassed,
         details: `✅ FORMULA: ${mathValidation.formula}
-📊 Budget: ₹70,000 | Spent: ₹${totalMonthly.toLocaleString()} | Expected: ₹${expectedRemaining.toLocaleString()} | Actual: ₹${remainingBudget?.toLocaleString() || 'null'}
-🎯 Example: ${mathValidation.example}
+📊 Budget: ₹75,000 | Spent: ₹${totalMonthly.toLocaleString()} | Expected: ₹${expectedRemaining.toLocaleString()} | Actual: ₹${remainingBudget?.toLocaleString() || 'null'}
+🎯 Example: 75,000 - 6,000 = 69,000 (as per user requirement)
 ${mathValidation.isCorrect ? '✅ MATH CORRECT' : '❌ MATH ERROR'}`
       });
 

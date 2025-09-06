@@ -45,8 +45,10 @@ export default function ExportScreen() {
       <Text style={styles.title}>Export CSV</Text>
       <Text style={styles.subtitle}>Share or save a CSV of all your expenses.</Text>
       <TouchableOpacity testID="export-share" onPress={onShare} style={styles.button} activeOpacity={0.8} disabled={busy}>
-        {busy ? <ActivityIndicator color="#001F3F" /> : <Share2 color="#001F3F" />}
-        <Text style={styles.buttonText}>{busy ? 'Working...' : 'Share / Save CSV'}</Text>
+        <View style={styles.buttonContent}>
+          {busy ? <ActivityIndicator color="#001F3F" /> : <Share2 color="#001F3F" />}
+          <Text style={styles.buttonText}>{busy ? 'Working...' : 'Share / Save CSV'}</Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -56,6 +58,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#001F3F', padding: 20 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF', marginTop: 16, marginBottom: 8 },
   subtitle: { color: '#B0B0B0', marginBottom: 16 },
-  button: { flexDirection: 'row', gap: 8 as unknown as number, backgroundColor: '#25D366', borderRadius: 12, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  button: { backgroundColor: '#25D366', borderRadius: 12, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   buttonText: { color: '#001F3F', fontSize: 16, fontWeight: '700', marginLeft: 8 },
 });

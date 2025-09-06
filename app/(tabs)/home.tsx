@@ -57,10 +57,26 @@ import React, { useState } from 'react';
       // Example: 70,000 - 6,000 = 64,000 remaining
 
       const handleExport = async () => {
-        const csv = `Date\tExpenseType\tPaymentType\tAmount\tNotes
-${expenses.map(e => `"${e.date}"\t"${e.category}"\t"${e.paymentType || 'Cash'}"\t"${e.amount}"\t"${(e.notes || '').replace(/"/g, '""').replace(/\t/g, ' ')}"`).join('\n')}`;
+        // UPDATED: Use the same mathematical logic as the store
+        // AutopayDeduction and LoanEMI show positive amounts (they are added to expenses)
+        // Only Subtract category shows negative amounts
+        const header = 'Date\tExpenseType\tPaymentType\tAmount\tNotes';
+        const rows = expenses.map(e => {
+          // Apply the same mathematical logic as in the app:
+          // - All categories are ADDED except "Subtract" category
+          // - AutopayDeduction and LoanEMI are ADDED (positive amounts)
+          // - Only "Subtract" category should show negative amounts
+          let displayAmount = Math.abs(e.amount); // Always show positive amounts
+          if (e.category === 'Subtract') {
+            displayAmount = -Math.abs(e.amount); // Only Subtract category shows negative
+          }
+          
+          return `${e.date}\t${e.category}\t${e.paymentType || 'Cash'}\t${displayAmount}\t${(e.notes || '').replace(/"/g, '""').replace(/\t/g, ' ')}`;
+        });
+        const csv = [header, ...rows].join('\n');
+        
         await Clipboard.setStringAsync(csv);
-        Alert.alert('Exported', 'Copied in TSV/Excel/CSV compatible format!');
+        Alert.alert('Exported', 'Copied in TSV/Excel/CSV compatible format with correct mathematical logic!');
       };
 
       const handleSummaryTap = (type: string) => {

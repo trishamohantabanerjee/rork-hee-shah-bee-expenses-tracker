@@ -5,15 +5,24 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity,
-  Alert 
+  Alert,
+  Platform 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart3, Download, Calendar, IndianRupee } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Colors } from '@/constants/colors';
 import { useExpenseStore } from '@/hooks/expense-store';
 
 export default function ReportsScreen() {
-  const { expenses, getExpensesByCategory, t, getMonthlyEMITotal } = useExpenseStore();
+  const { 
+    expenses, 
+    getExpensesByCategory, 
+    t, 
+    getMonthlyEMITotal,
+    generateWeeklyCSV,
+    generateMonthlyCSV 
+  } = useExpenseStore();
   const [selectedPeriod, setSelectedPeriod] = useState<'weekly' | 'monthly'>('monthly');
 
   const getFilteredExpenses = () => {
@@ -34,12 +43,48 @@ export default function ReportsScreen() {
   const categoryData = getExpensesByCategory();
   const monthlyEMITotal = getMonthlyEMITotal();
 
-  const handleExport = () => {
-    Alert.alert(
-      'Export Data',
-      'Export functionality would generate a CSV/PDF file with your expense data.',
-      [{ text: 'OK' }]
-    );
+  const handleExport = async () => {
+    try {
+      // UPDATED: Generate CSV based on selected period with correct mathematical logic
+      // AutopayDeduction and LoanEMI are ADDED (positive amounts) in CSV
+      // Only Subtract category shows negative amounts
+      const csv = selectedPeriod === 'weekly' ? generateWeeklyCSV() : generateMonthlyCSV();
+      
+      if (Platform.OS === 'web') {
+        // Web: Download as file
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `heeshahbee-${selectedPeriod}-export.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        Alert.alert('Export', `${selectedPeriod} CSV downloaded`);
+      } else {
+        // Mobile: Copy to clipboard and share
+        await Clipboard.setStringAsync(csv);
+        
+        // Try to share the file on mobile
+        try {
+          const FileSystem = await import('expo-file-system');
+          const Sharing = await import('expo-sharing');
+          const uri = FileSystem.cacheDirectory + `heeshahbee-${selectedPeriod}-export.csv`;
+          await FileSystem.writeAsStringAsync(uri, csv, { encoding: FileSystem.EncodingType.UTF8 });
+          const available = await Sharing.isAvailableAsync();
+          if (available) {
+            await Sharing.shareAsync(uri, { mimeType: 'text/csv', dialogTitle: `Export ${selectedPeriod} CSV` });
+          } else {
+            Alert.alert('Export', `${selectedPeriod} data copied to clipboard in TSV/Excel/CSV compatible format!`);
+          }
+        } catch (shareError) {
+          // Fallback to clipboard
+          Alert.alert('Export', `${selectedPeriod} data copied to clipboard in TSV/Excel/CSV compatible format!`);
+        }
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert('Error', 'Failed to export data');
+    }
   };
 
   const renderBarChart = () => {

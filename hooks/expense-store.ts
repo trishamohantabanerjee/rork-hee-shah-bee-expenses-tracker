@@ -413,19 +413,66 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     }
   }, [expenses]);
 
-  const generateCSV = useCallback(() => {
+  const generateCSV = useCallback((filteredExpenses?: Expense[]) => {
     // UPDATED: TSV/Excel/CSV compatible format with columns: Date, ExpenseType, PaymentType, Amount, Notes
+    // MATHEMATICAL LOGIC: All categories are ADDED except "Subtract" category
+    // AutopayDeduction and LoanEMI should show positive amounts (they are added to expenses)
+    const expensesToExport = filteredExpenses || expenses;
     const header = 'Date\tExpenseType\tPaymentType\tAmount\tNotes';
-    const rows = expenses.map(e => [
-      e.date,
-      e.category, // ExpenseType
-      e.paymentType ?? 'Cash',
-      e.amount.toString(),
-      (e.notes ?? '').replace(/"/g, '""').replace(/\t/g, ' '), // Sanitize for TSV
-    ]);
+    const rows = expensesToExport.map(e => {
+      // Apply the same mathematical logic as in the app:
+      // - All categories are ADDED except "Subtract" category
+      // - AutopayDeduction and LoanEMI are ADDED (positive amounts)
+      // - Only "Subtract" category should show negative amounts
+      let displayAmount = Math.abs(e.amount); // Always show positive amounts
+      if (e.category === 'Subtract') {
+        displayAmount = -Math.abs(e.amount); // Only Subtract category shows negative
+      }
+      
+      return [
+        e.date,
+        e.category, // ExpenseType
+        e.paymentType ?? 'Cash',
+        displayAmount.toString(),
+        (e.notes ?? '').replace(/"/g, '""').replace(/\t/g, ' '), // Sanitize for TSV
+      ];
+    });
     const csv = [header, ...rows.map(r => r.join('\t'))].join('\n');
+    
+    console.log('CSV GENERATION WITH CORRECT MATHEMATICAL LOGIC:', {
+      totalExpenses: expensesToExport.length,
+      logic: 'All categories ADDED except Subtract (negative)',
+      sampleRows: rows.slice(0, 3)
+    });
+    
     return csv;
   }, [expenses]);
+  
+  const generateWeeklyCSV = useCallback(() => {
+    const now = new Date();
+    const weekAgo = new Date();
+    weekAgo.setDate(now.getDate() - 7);
+    
+    const weeklyExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate >= weekAgo && expenseDate <= now;
+    });
+    
+    return generateCSV(weeklyExpenses);
+  }, [expenses, generateCSV]);
+  
+  const generateMonthlyCSV = useCallback(() => {
+    const now = new Date();
+    const monthAgo = new Date();
+    monthAgo.setMonth(now.getMonth() - 1);
+    
+    const monthlyExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate >= monthAgo && expenseDate <= now;
+    });
+    
+    return generateCSV(monthlyExpenses);
+  }, [expenses, generateCSV]);
 
   const getCurrentMonthExpenses = useCallback(() => {
     const now = new Date();
@@ -613,6 +660,8 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     clearAllData,
     clearDailyData,
     generateCSV,
+    generateWeeklyCSV,
+    generateMonthlyCSV,
     getCurrentMonthExpenses,
     getTotalMonthlyExpenses,
     getRemainingBudget,
