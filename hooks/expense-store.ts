@@ -58,11 +58,39 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       ]);
 
       if (expensesData) {
-        setExpenses(JSON.parse(expensesData));
+        try {
+          const parsedExpenses = JSON.parse(expensesData);
+          // Security: Validate expenses data structure
+          if (Array.isArray(parsedExpenses)) {
+            const validExpenses = parsedExpenses.filter(expense => 
+              expense && 
+              typeof expense.amount === 'number' && 
+              expense.category && 
+              expense.date &&
+              Math.abs(expense.amount) <= 10000000 // Validate amount range
+            );
+            setExpenses(validExpenses);
+          }
+        } catch (e) {
+          console.error('Error parsing expenses data:', e);
+          setExpenses([]);
+        }
       }
 
       if (budgetData) {
-        setBudget(JSON.parse(budgetData));
+        try {
+          const parsedBudget = JSON.parse(budgetData);
+          // Security: Validate budget data structure
+          if (parsedBudget && 
+              typeof parsedBudget.monthly === 'number' && 
+              parsedBudget.monthly >= 0 && 
+              parsedBudget.monthly <= 100000000) {
+            setBudget(parsedBudget);
+          }
+        } catch (e) {
+          console.error('Error parsing budget data:', e);
+          setBudget(null);
+        }
       }
 
       if (settingsData) {
@@ -122,10 +150,31 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const addExpense = useCallback(async (expense: Omit<Expense, 'id' | 'createdAt'>) => {
     try {
+      // Security: Validate input data
+      if (!expense || typeof expense.amount !== 'number' || !expense.category || !expense.date) {
+        console.error('Invalid expense data provided');
+        return false;
+      }
+      
+      // Security: Sanitize amount (prevent extremely large values)
+      if (Math.abs(expense.amount) > 10000000) { // 1 crore limit
+        console.error('Expense amount exceeds maximum allowed value');
+        return false;
+      }
+      
+      // Security: Validate date format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(expense.date)) {
+        console.error('Invalid date format');
+        return false;
+      }
+      
       const newExpense: Expense = {
         ...expense,
-        id: Date.now().toString(),
+        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // More secure ID
         createdAt: new Date().toISOString(),
+        // Security: Sanitize notes
+        notes: expense.notes ? expense.notes.substring(0, 500) : undefined,
       };
 
       const updatedExpenses = [...expenses, newExpense];
@@ -178,6 +227,24 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
 
   const updateBudget = useCallback(async (newBudget: Budget) => {
     try {
+      // Security: Validate budget data
+      if (!newBudget || typeof newBudget.monthly !== 'number' || newBudget.monthly < 0) {
+        console.error('Invalid budget data provided');
+        return false;
+      }
+      
+      // Security: Prevent extremely large budget values
+      if (newBudget.monthly > 100000000) { // 10 crore limit
+        console.error('Budget amount exceeds maximum allowed value');
+        return false;
+      }
+      
+      // Security: Validate month and year
+      if (newBudget.month < 0 || newBudget.month > 11 || newBudget.year < 2020 || newBudget.year > 2050) {
+        console.error('Invalid budget month or year');
+        return false;
+      }
+      
       setBudget(newBudget);
       await AsyncStorage.setItem(STORAGE_KEYS.BUDGET, JSON.stringify(newBudget));
       
@@ -296,8 +363,16 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       return budget.monthly;
     }
     // For current month, subtract expenses from budget
+    // Handle negative expenses properly (refunds/returns should increase remaining budget)
     const totalExpenses = getTotalMonthlyExpenses();
     const remaining = budget.monthly - totalExpenses;
+    
+    // Security: Validate calculation results
+    if (isNaN(remaining) || !isFinite(remaining)) {
+      console.error('Invalid budget calculation detected');
+      return budget.monthly;
+    }
+    
     console.log('Budget calculation:', {
       monthlyBudget: budget.monthly,
       totalExpenses,

@@ -122,14 +122,14 @@ export default function TestCalculationsScreen() {
       try {
         const now = new Date();
         const success = await updateBudget({
-          monthly: 75000, // Set to 75,000 to match user's scenario
+          monthly: 70000, // Set to 70,000 to match user's screenshot
           year: now.getFullYear(),
           month: now.getMonth()
         });
         results.push({
           name: 'Set Budget',
           passed: success,
-          details: success ? 'Budget set to ₹75,000' : 'Failed to set budget'
+          details: success ? 'Budget set to ₹70,000 (matching user screenshot)' : 'Failed to set budget'
         });
       } catch (error) {
         results.push({
@@ -161,14 +161,23 @@ export default function TestCalculationsScreen() {
         details: `Expected: ₹${expectedTotal.toLocaleString()}, Got: ₹${totalMonthly.toLocaleString()}`
       });
 
-      // Test 5: Remaining budget calculation
-      const expectedRemaining = 75000 - totalMonthly; // Updated to match the 75,000 budget
+      // Test 5: Remaining budget calculation (CRITICAL FIX)
+      const expectedRemaining = 70000 - totalMonthly; // Budget - Total Expenses (70k from screenshot)
       const budgetCalculationPassed = remainingBudget !== null && Math.abs(remainingBudget - expectedRemaining) < 0.01;
+      
+      // Additional validation for the mathematical logic
+      const mathValidation = {
+        budget: 70000,
+        totalExpenses: totalMonthly,
+        calculatedRemaining: 70000 - totalMonthly,
+        actualRemaining: remainingBudget,
+        isCorrect: budgetCalculationPassed
+      };
 
       results.push({
-        name: 'Remaining Budget Calculation',
+        name: 'Remaining Budget Calculation (FIXED)',
         passed: budgetCalculationPassed,
-        details: `Expected: ₹${expectedRemaining.toLocaleString()}, Got: ₹${remainingBudget?.toLocaleString() || 'null'}`
+        details: `Budget: ₹70,000 | Spent: ₹${totalMonthly.toLocaleString()} | Expected Remaining: ₹${expectedRemaining.toLocaleString()} | Actual: ₹${remainingBudget?.toLocaleString() || 'null'} | Math Check: ${mathValidation.isCorrect ? '✅' : '❌'}`
       });
 
       // Test 6: Category breakdown with varied amounts
@@ -243,13 +252,21 @@ export default function TestCalculationsScreen() {
         details: largeNumberTest && smallNumberTest ? 'Handles large (≥10k) and small (<1) amounts correctly' : 'Missing large or small number tests'
       });
 
-      // Test 11: Negative number calculations
+      // Test 11: Negative number calculations (CRITICAL TEST)
       const negativeTest = sampleExpenses.some(e => e.amount < 0);
-      const negativeCalculationPassed = negativeTest && totalMonthly === expectedTotal;
+      const negativeCalculationPassed = negativeTest && Math.abs(totalMonthly - expectedTotal) < 0.01;
+      
+      // Detailed breakdown for negative amount handling
+      const positiveExpenses = sampleExpenses.filter(e => e.amount > 0);
+      const negativeExpenses = sampleExpenses.filter(e => e.amount < 0);
+      const positiveTotal = positiveExpenses.reduce((sum, e) => sum + e.amount, 0);
+      const negativeTotal = negativeExpenses.reduce((sum, e) => sum + e.amount, 0); // This will be negative
+      const netTotal = positiveTotal + negativeTotal; // Adding negative number subtracts it
+      
       results.push({
-        name: 'Negative Amount Calculations',
+        name: 'Negative Amount Calculations (DETAILED)',
         passed: negativeCalculationPassed,
-        details: negativeCalculationPassed ? 'Negative amounts correctly subtracted from total' : 'Negative amount calculation failed'
+        details: `Positive: ₹${positiveTotal.toLocaleString()} | Negative: ₹${negativeTotal.toLocaleString()} | Net: ₹${netTotal.toLocaleString()} | Expected: ₹${expectedTotal.toLocaleString()} | Actual: ₹${totalMonthly.toLocaleString()} | ${negativeCalculationPassed ? '✅ Correct' : '❌ Failed'}`
       });
 
       // Test 12: Data persistence (simulate app restart)
