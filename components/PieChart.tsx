@@ -84,8 +84,8 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
       <View style={[styles.chartWrap, { width: chartSize, height: chartSize }]}
         testID="piechart-svg-wrap"
       >
-        <Svg width={chartSize} height={chartSize}>
-          <G x={chartSize / 2} y={chartSize / 2}>
+        <Svg width={chartSize} height={chartSize} viewBox={`0 0 ${chartSize} ${chartSize}`}>
+          <G transform={`translate(${chartSize / 2}, ${chartSize / 2})`}>
             <Circle
               r={finalRadius}
               stroke={Colors.border}
