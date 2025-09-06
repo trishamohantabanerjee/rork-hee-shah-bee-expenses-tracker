@@ -126,6 +126,15 @@ export function PieChart({ data, size, centerLabel = 'Expenses by Category' }: P
   const innerDiameter = chartSize - 2 * adjustedStroke;
   const labelMaxWidth = Math.max(0, innerDiameter - 16);
 
+  // ENHANCED: Add platform-specific logging for debugging
+  console.log(`📊 PIE CHART RENDER (${Platform.OS.toUpperCase()}):`, {
+    chartSize,
+    screenWidth: width,
+    dataEntries: entries.length,
+    totalValue: total,
+    platform: Platform.OS
+  });
+
   return (
     <View style={[styles.container, { width: chartSize }]} testID="piechart-container">
       <View style={[styles.chartWrap, { width: chartSize, height: chartSize }]}
@@ -206,11 +215,29 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
+    // ENHANCED: Platform-specific container adjustments
+    ...(Platform.OS === 'android' && {
+      paddingVertical: 4, // Extra vertical padding on Android
+    }),
+    ...(Platform.OS === 'ios' && {
+      paddingVertical: 2, // Minimal padding on iOS
+    }),
   },
   chartWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    // ENHANCED: Better positioning for mobile platforms
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    }),
   },
   emptyChart: {
     backgroundColor: Colors.card,

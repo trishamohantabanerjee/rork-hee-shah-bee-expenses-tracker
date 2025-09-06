@@ -213,7 +213,10 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
                     Category Breakdown (This Month)
                   </Text>
                 </View>
-                <PieChart data={expensesByCategory} />
+                {/* ENHANCED: Pie chart with proper centering and platform-specific adjustments */}
+                <View style={styles.chartContainer} testID="pie-chart-container">
+                  <PieChart data={expensesByCategory} />
+                </View>
               </View>
             )}
 
@@ -372,27 +375,40 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
         fontSize: 12,
       },
       chartCard: {
-        padding: Platform.OS === 'android' ? 18 : 20,
+        padding: Platform.OS === 'android' ? 20 : 20, // Consistent padding
         borderRadius: 16,
         marginBottom: 24,
-        // IMPROVED positioning and spacing for mobile platforms
+        // ENHANCED positioning and spacing for mobile platforms
         ...(Platform.OS !== 'web' && {
-          marginHorizontal: 4, // Better margin for visual spacing
-          alignSelf: 'center', // Center the chart card
+          marginHorizontal: 8, // Better margin for visual spacing
+          alignSelf: 'stretch', // Full width for better layout
           maxWidth: '100%', // Prevent overflow
         }),
-        // Additional styling for better UI/UX
+        // Enhanced styling for better UI/UX
         borderWidth: 1,
         borderColor: Colors.border,
         ...(Platform.OS !== 'web' && {
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
-            height: 1,
+            height: 2,
           },
-          shadowOpacity: 0.05,
-          shadowRadius: 2,
-          elevation: 2,
+          shadowOpacity: 0.08,
+          shadowRadius: 3,
+          elevation: 3,
+        }),
+      },
+      // NEW: Enhanced chart container for better positioning
+      chartContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: Platform.OS === 'android' ? 16 : 12,
+        // Platform-specific adjustments for optimal positioning
+        ...(Platform.OS === 'android' && {
+          paddingHorizontal: 8, // Extra padding on Android for better touch targets
+        }),
+        ...(Platform.OS === 'ios' && {
+          paddingHorizontal: 4, // Minimal padding on iOS for cleaner look
         }),
       },
       chartHeader: {
