@@ -473,7 +473,11 @@ export default function DayWiseExpensesScreen() {
                           fontSize: category === 'Investment/MF/SIP' ? 11 : 12
                         }
                       ]}>
-                        {category === 'Investment/MF/SIP' ? 'Investment\nMF/SIP' : category}
+                        {category === 'Investment/MF/SIP' ? (
+                          <Text>
+                            Investment{"\n"}MF/SIP
+                          </Text>
+                        ) : category}
                       </Text>
                     </TouchableOpacity>
                   ))}
