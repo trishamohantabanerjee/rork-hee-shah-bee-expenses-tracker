@@ -11,7 +11,7 @@ import React, { useState } from 'react';
       Modal
     } from 'react-native';
     import { router } from 'expo-router';
-    import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
     import {
       Plus,
@@ -23,8 +23,7 @@ import React, { useState } from 'react';
       Edit3,
       Save,
       X,
-      Calendar,
-      TestTube
+      Calendar
     } from 'lucide-react-native';
     import * as Clipboard from 'expo-clipboard';
     import { Colors } from '@/constants/colors';
@@ -255,14 +254,6 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
               >
                 <Calendar size={24} color={Colors.primary} />
                 <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Day-wise View</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.actionButton, styles.secondaryButton, { backgroundColor: Colors.card, borderColor: Colors.border }]}
-                onPress={() => router.push('/test-calculations')}
-              >
-                <TestTube size={24} color={Colors.primary} />
-                <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Run Tests</Text>
               </TouchableOpacity>
             </View>
 
