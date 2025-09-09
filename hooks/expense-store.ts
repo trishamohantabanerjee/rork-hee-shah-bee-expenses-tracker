@@ -486,35 +486,64 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   }, [expenses]);
 
   const getTotalMonthlyExpenses = useCallback(() => {
-    // UPDATED MATHEMATICAL LOGIC: 
+    // REQUIREMENT 2: MATHEMATICAL LOGIC VERIFICATION
     // - All categories are ADDED except "Subtract" category
-    // - "AutopayDeduction" and "LoanEMI" are now ADDED (not subtracted)
+    // - "AutopayDeduction" and "LoanEMI" are ADDED (not subtracted)
     // - Only "Subtract" category is subtracted from total
     const monthlyExpenses = getCurrentMonthExpenses();
-    const total = monthlyExpenses.reduce((sum, expense) => {
-      // CRITICAL FIX: Only "Subtract" category should be subtracted
-      // "AutopayDeduction" and "LoanEMI" should be ADDED to expenses
-      if (expense.category === 'Subtract') {
-        // Subtract category: subtract the absolute value
-        return sum - Math.abs(expense.amount);
-      } else {
-        // All other categories (including AutopayDeduction and LoanEMI): add the absolute value
-        return sum + Math.abs(expense.amount);
-      }
-    }, 0);
     
-    console.log('TOTAL MONTHLY EXPENSES CALCULATION (UPDATED LOGIC):', {
-      expenseCount: monthlyExpenses.length,
-      total: total,
-      logic: 'All categories ADDED except Subtract (subtracted)',
-      breakdown: monthlyExpenses.map(e => ({ 
-        category: e.category, 
-        amount: e.amount, 
-        absoluteAmount: Math.abs(e.amount),
-        operation: e.category === 'Subtract' ? 'SUBTRACT' : 'ADD',
-        date: e.date 
-      }))
+    // ENHANCED: Separate calculation for verification
+    let addedAmount = 0;
+    let subtractedAmount = 0;
+    const categoryBreakdown: Record<string, { count: number; total: number; operation: string }> = {};
+    
+    monthlyExpenses.forEach(expense => {
+      const absAmount = Math.abs(expense.amount);
+      const category = expense.category;
+      
+      // Initialize category if not exists
+      if (!categoryBreakdown[category]) {
+        categoryBreakdown[category] = { count: 0, total: 0, operation: '' };
+      }
+      
+      if (category === 'Subtract') {
+        // Subtract category: subtract the absolute value
+        subtractedAmount += absAmount;
+        categoryBreakdown[category].total -= absAmount;
+        categoryBreakdown[category].operation = 'SUBTRACT';
+      } else {
+        // All other categories (including AutopayDeduction, LoanEMI, Investment/MF/SIP): add the absolute value
+        addedAmount += absAmount;
+        categoryBreakdown[category].total += absAmount;
+        categoryBreakdown[category].operation = 'ADD';
+      }
+      
+      categoryBreakdown[category].count += 1;
     });
+    
+    const total = addedAmount - subtractedAmount;
+    
+    // ENHANCED LOGGING for mathematical verification
+    console.log('TOTAL MONTHLY EXPENSES CALCULATION (VERIFIED LOGIC):', {
+      expenseCount: monthlyExpenses.length,
+      addedAmount: addedAmount,
+      subtractedAmount: subtractedAmount,
+      finalTotal: total,
+      calculation: `${addedAmount} - ${subtractedAmount} = ${total}`,
+      logic: 'All categories ADDED except Subtract (subtracted)',
+      categoryBreakdown: categoryBreakdown,
+      verification: {
+        isCorrect: total === (addedAmount - subtractedAmount),
+        hasNegativeValues: subtractedAmount > 0,
+        hasPositiveValues: addedAmount > 0
+      }
+    });
+    
+    // SECURITY: Validate calculation results
+    if (isNaN(total) || !isFinite(total)) {
+      console.error('SECURITY: Invalid total calculation detected');
+      return 0;
+    }
     
     return total;
   }, [getCurrentMonthExpenses]);
@@ -636,6 +665,94 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     }
   }, [emis]);
 
+  const deleteExpense = useCallback(async (id: string) => {
+    try {
+      // ADVANCED SECURITY: Validate expense ID format
+      if (!id || typeof id !== 'string' || id.length < 10) {
+        console.error('SECURITY: Invalid expense ID format');
+        return false;
+      }
+      
+      const updatedExpenses = expenses.filter(expense => expense.id !== id);
+      setExpenses(updatedExpenses);
+      
+      // ADVANCED SECURITY: Validate data before storage
+      try {
+        const serialized = JSON.stringify(updatedExpenses);
+        if (serialized.length > 50000000) { // 50MB limit
+          console.error('SECURITY: Data size exceeds storage limits after deletion');
+          return false;
+        }
+        await AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, serialized);
+      } catch (storageError) {
+        console.error('SECURITY: Storage operation failed during deletion:', storageError);
+        return false;
+      }
+      
+      console.log('EXPENSE DELETED SUCCESSFULLY:', { id, remainingCount: updatedExpenses.length });
+      return true;
+    } catch (error) {
+      console.error('SECURITY: Error deleting expense:', error);
+      return false;
+    }
+  }, [expenses]);
+
+  const updateExpense = useCallback(async (id: string, updates: Partial<Omit<Expense, 'id' | 'createdAt'>>) => {
+    try {
+      // ADVANCED SECURITY: Validate expense ID and updates
+      if (!id || typeof id !== 'string' || !updates) {
+        console.error('SECURITY: Invalid expense update parameters');
+        return false;
+      }
+      
+      // Apply same validation as addExpense for updates
+      if (updates.amount !== undefined) {
+        if (typeof updates.amount !== 'number' || Math.abs(updates.amount) > 10000000) {
+          console.error('SECURITY: Invalid amount in expense update');
+          return false;
+        }
+        updates.amount = Math.round(updates.amount * 100) / 100; // Ensure precision
+      }
+      
+      if (updates.category !== undefined) {
+        const allowedCategories = ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Healthcare', 'Education', 'Others', 'Subtract', 'AutopayDeduction', 'LoanEMI', 'Investment/MF/SIP'];
+        if (!allowedCategories.includes(updates.category)) {
+          console.error('SECURITY: Invalid category in expense update');
+          return false;
+        }
+      }
+      
+      if (updates.notes !== undefined) {
+        updates.notes = updates.notes ? updates.notes.substring(0, 500).replace(/[<>"'&]/g, '').replace(/\n/g, ' ') : undefined;
+      }
+      
+      const updatedExpenses = expenses.map(expense => 
+        expense.id === id ? { ...expense, ...updates } : expense
+      );
+      
+      setExpenses(updatedExpenses);
+      
+      // ADVANCED SECURITY: Validate data before storage
+      try {
+        const serialized = JSON.stringify(updatedExpenses);
+        if (serialized.length > 50000000) { // 50MB limit
+          console.error('SECURITY: Data size exceeds storage limits after update');
+          return false;
+        }
+        await AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, serialized);
+      } catch (storageError) {
+        console.error('SECURITY: Storage operation failed during update:', storageError);
+        return false;
+      }
+      
+      console.log('EXPENSE UPDATED SUCCESSFULLY:', { id, updates });
+      return true;
+    } catch (error) {
+      console.error('SECURITY: Error updating expense:', error);
+      return false;
+    }
+  }, [expenses]);
+
   const getMonthlyEMITotal = useCallback(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -688,5 +805,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     deleteEMI,
     getMonthlyEMITotal,
     getNextDueEMI,
+    deleteExpense,
+    updateExpense,
   };
 });

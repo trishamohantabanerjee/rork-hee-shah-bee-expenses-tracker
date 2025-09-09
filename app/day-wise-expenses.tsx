@@ -40,7 +40,9 @@ interface DayExpense {
 export default function DayWiseExpensesScreen() {
   const {
     expenses,
-    addExpense
+    addExpense,
+    deleteExpense,
+    updateExpense
   } = useExpenseStore();
   
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -162,22 +164,35 @@ export default function DayWiseExpensesScreen() {
       return;
     }
 
-    const success = await addExpense({
-      amount,
-      category: formData.category,
-      date: selectedDate,
-      paymentType: formData.paymentType,
-      notes: formData.notes.trim() || undefined
-    });
+    let success = false;
+    
+    if (editingExpense) {
+      // Update existing expense
+      success = await updateExpense(editingExpense.id, {
+        amount,
+        category: formData.category,
+        paymentType: formData.paymentType,
+        notes: formData.notes.trim() || undefined
+      });
+    } else {
+      // Add new expense
+      success = await addExpense({
+        amount,
+        category: formData.category,
+        date: selectedDate,
+        paymentType: formData.paymentType,
+        notes: formData.notes.trim() || undefined
+      });
+    }
 
     if (success) {
       setShowAddModal(false);
       setShowEditModal(false);
-      Alert.alert('Success', 'Expense saved successfully!');
+      Alert.alert('Success', `Expense ${editingExpense ? 'updated' : 'added'} successfully!`);
     } else {
-      Alert.alert('Error', 'Failed to save expense');
+      Alert.alert('Error', `Failed to ${editingExpense ? 'update' : 'save'} expense`);
     }
-  }, [formData, selectedDate, addExpense]);
+  }, [formData, selectedDate, addExpense, updateExpense, editingExpense]);
 
   const handleDeleteExpense = useCallback((expense: Expense) => {
     Alert.alert(
@@ -189,14 +204,17 @@ export default function DayWiseExpensesScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            // Remove expense from the list
-            // Note: This would require implementing deleteExpense in the store
-            Alert.alert('Info', 'Delete functionality will be implemented in the store');
+            const success = await deleteExpense(expense.id);
+            if (success) {
+              Alert.alert('Success', 'Expense deleted successfully!');
+            } else {
+              Alert.alert('Error', 'Failed to delete expense. Please try again.');
+            }
           }
         }
       ]
     );
-  }, []);
+  }, [deleteExpense]);
 
   const handleExportDay = useCallback(async () => {
     if (selectedDayExpenses.length === 0) {
@@ -327,7 +345,7 @@ export default function DayWiseExpensesScreen() {
             {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </Text>
           <TouchableOpacity onPress={handleNextMonth}>
-            <ChevronLeft size={24} color={Colors.text} style={{ transform: [{ rotate: '180deg' }] }} />
+            <ChevronLeft size={24} color={Colors.text} style={styles.rotatedIcon} />
           </TouchableOpacity>
         </View>
 
@@ -865,5 +883,8 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '600' as const,
+  },
+  rotatedIcon: {
+    transform: [{ rotate: '180deg' }],
   },
 });
