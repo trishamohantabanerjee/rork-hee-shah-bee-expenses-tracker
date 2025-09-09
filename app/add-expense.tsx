@@ -73,7 +73,7 @@ import React, { useState } from 'react';
               if (numAmount > 0) {
                 // CRITICAL FIX: Only "Subtract" category should be negative
                 // AutopayDeduction, LoanEMI, and Investment/MF/SIP should be positive (they are added to expenses)
-                const finalAmount = cat === 'Subtract' ? -numAmount : numAmount;
+                const finalAmount = cat === 'Subtract' ? -Math.abs(numAmount) : Math.abs(numAmount);
                 expensesToAdd.push({ category: cat, amount: finalAmount, paymentType, notes });
               }
             });
@@ -196,7 +196,7 @@ import React, { useState } from 'react';
                               <View style={styles.iconContainer}>
                                 <IconComponent size={20} color={Colors.primary} />
                               </View>
-                              <Text style={styles.categoryName}>{t.categories[category]}</Text>
+                              <Text style={category === 'Investment/MF/SIP' ? styles.categoryNameSmall : styles.categoryName}>{t.categories[category]}</Text>
                             </View>
                             
                             <View style={styles.inputGroup}>
@@ -343,6 +343,14 @@ import React, { useState } from 'react';
             flex: 1,
             textAlign: 'center',
             lineHeight: 16,
+          },
+          categoryNameSmall: {
+            fontSize: 10,
+            fontWeight: '600',
+            color: Colors.text,
+            flex: 1,
+            textAlign: 'center',
+            lineHeight: 12,
           },
           inputGroup: {
             marginBottom: 12,

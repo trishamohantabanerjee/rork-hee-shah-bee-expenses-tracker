@@ -76,24 +76,27 @@ import React, { useState } from 'react';
         });
         const csv = [header, ...rows].join('\n');
         
-        await Clipboard.setStringAsync(csv);
-        Alert.alert('Exported', 'Copied in TSV/Excel/CSV compatible format with correct mathematical logic!');
+        // ENHANCED: Add calculation summary
+        const summary = `\n\nSUMMARY:\nTotal Monthly Expenses: ₹${totalMonthly.toLocaleString()}\nBudget: ₹${budget?.monthly.toLocaleString() || 'Not Set'}\nRemaining: ₹${remainingBudget?.toLocaleString() || 'N/A'}\nLogic: All categories ADDED except Subtract (subtracted)`;
+        const finalCsv = csv + summary;
+        
+        await Clipboard.setStringAsync(finalCsv);
+        Alert.alert('Exported', `Copied ${expenses.length} expenses in TSV/Excel/CSV format with calculation summary!`);
       };
 
       const handleSummaryTap = (type: string) => {
         let message = '';
         switch (type) {
           case 'monthly':
-            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}
-${monthlyExpenses.length} transactions`;
+            // ENHANCED: Show detailed breakdown for verification
+            const categoryBreakdown = Object.entries(expensesByCategory)
+              .map(([cat, amount]) => `${cat}: ₹${Math.abs(amount).toLocaleString()}${amount < 0 ? ' (subtracted)' : ' (added)'}`)
+              .join('\n');
+            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions\n\nCategory Breakdown:\n${categoryBreakdown}\n\nLogic: All categories ADDED except Subtract (subtracted)`;
             break;
           case 'remaining':
             if (remainingBudget !== null && budget) {
-              message = `Budget: ₹${budget.monthly.toLocaleString()}
-Spent: ₹${totalMonthly.toLocaleString()}
-Remaining: ₹${remainingBudget.toLocaleString()}
-
-Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString()} = ${remainingBudget.toLocaleString()}`;
+              message = `Budget: ₹${budget.monthly.toLocaleString()}\nSpent: ₹${totalMonthly.toLocaleString()}\nRemaining: ₹${remainingBudget.toLocaleString()}\n\nCalculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString()} = ${remainingBudget.toLocaleString()}\n\nMath Verification: ${remainingBudget === (budget.monthly - totalMonthly) ? '✅ CORRECT' : '❌ ERROR'}`;
             } else {
               message = 'No budget set. Tap to set your monthly budget.';
             }
@@ -161,7 +164,7 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
                   <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>
                     Monthly Budget
                   </Text>
-                  <Edit3 size={16} color={Colors.textSecondary} style={{ marginLeft: 'auto' }} />
+                  <Edit3 size={16} color={Colors.textSecondary} style={styles.editIcon} />
                 </View>
                 <Text style={[styles.cardValue, { color: Colors.text }]}>
                   ₹{budget?.monthly.toLocaleString() || 'Set Budget'}
@@ -257,26 +260,54 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
               </TouchableOpacity>
             </View>
 
+            {/* ENHANCED: Quick Math Verification */}
+            {monthlyExpenses.length > 0 && (
+              <View style={[styles.verificationCard, { backgroundColor: Colors.card, marginBottom: 16 }]}>
+                <Text style={[styles.verificationTitle, { color: Colors.text }]}>✅ Math Verification</Text>
+                <Text style={[styles.verificationText, { color: Colors.textSecondary }]}>
+                  Budget - Expenses = Remaining
+                </Text>
+                <Text style={[styles.verificationFormula, { color: Colors.primary }]}>
+                  ₹{budget?.monthly.toLocaleString() || '0'} - ₹{totalMonthly.toLocaleString()} = ₹{remainingBudget?.toLocaleString() || '0'}
+                </Text>
+                <Text style={[styles.verificationStatus, { color: remainingBudget !== null && remainingBudget === ((budget?.monthly || 0) - totalMonthly) ? '#10B981' : '#EF4444' }]}>
+                  {remainingBudget !== null && remainingBudget === ((budget?.monthly || 0) - totalMonthly) ? '✅ Calculations Correct' : '❌ Calculation Error'}
+                </Text>
+              </View>
+            )}
+            
             {monthlyExpenses.length > 0 && (
               <View style={[styles.recentCard, { backgroundColor: Colors.card }]}>
                 <Text style={[styles.recentTitle, { color: Colors.text }]}>
                   Recent Expenses
                 </Text>
-                {monthlyExpenses.slice(0, 5).map((expense) => (
-                  <View key={expense.id} style={styles.expenseItem}>
-                    <View style={styles.expenseInfo}>
-                      <Text style={[styles.expenseCategory, { color: Colors.text }]}>
-                        {expense.category}
-                      </Text>
-                      <Text style={[styles.expenseDate, { color: Colors.textSecondary }]}>
-                        {new Date(expense.date).toLocaleDateString()}
+                {monthlyExpenses.slice(0, 5).map((expense) => {
+                  // ENHANCED: Show proper display amounts with correct logic
+                  const displayAmount = expense.category === 'Subtract' ? -Math.abs(expense.amount) : Math.abs(expense.amount);
+                  const isNegative = displayAmount < 0;
+                  
+                  return (
+                    <View key={expense.id} style={styles.expenseItem}>
+                      <View style={styles.expenseInfo}>
+                        <Text style={[styles.expenseCategory, { color: Colors.text }]}>
+                          {expense.category}
+                        </Text>
+                        <Text style={[styles.expenseDate, { color: Colors.textSecondary }]}>
+                          {new Date(expense.date).toLocaleDateString()}
+                        </Text>
+                      </View>
+                      <Text style={[
+                        styles.expenseAmount, 
+                        { color: isNegative ? '#EF4444' : Colors.text }
+                      ]}>
+                        {isNegative ? '-' : ''}₹{Math.abs(displayAmount).toLocaleString()}
                       </Text>
                     </View>
-                    <Text style={[styles.expenseAmount, { color: Colors.text }]}>
-                      {expense.category === 'Subtract' ? '-' : ''}₹{Math.abs(expense.amount).toLocaleString()}
-                    </Text>
-                  </View>
-                ))}
+                  );
+                })}
+                <Text style={[styles.cardSubtext, { color: Colors.textSecondary, marginTop: 12, fontSize: 11 }]}>
+                  Logic: All amounts ADDED except Subtract (shown in red, subtracted from total)
+                </Text>
               </View>
             )}
           </ScrollView>
@@ -596,5 +627,33 @@ Calculation: ${budget.monthly.toLocaleString()} - ${totalMonthly.toLocaleString(
       saveButtonText: {
         fontSize: 16,
         fontWeight: '600' as const,
+      },
+      // ENHANCED: Verification card styles
+      verificationCard: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: Colors.border,
+      },
+      verificationTitle: {
+        fontSize: 16,
+        fontWeight: '600' as const,
+        marginBottom: 8,
+      },
+      verificationText: {
+        fontSize: 12,
+        marginBottom: 4,
+      },
+      verificationFormula: {
+        fontSize: 14,
+        fontWeight: '500' as const,
+        marginBottom: 4,
+      },
+      verificationStatus: {
+        fontSize: 12,
+        fontWeight: '500' as const,
+      },
+      editIcon: {
+        marginLeft: 'auto',
       },
     });

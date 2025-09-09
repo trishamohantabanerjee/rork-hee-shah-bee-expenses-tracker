@@ -421,7 +421,7 @@ export default function DayWiseExpensesScreen() {
               No expenses recorded for this date
             </Text>
             <Text style={[styles.noExpensesSubtext, { color: Colors.textSecondary }]}>
-              Tap &quot;Add Expense&quot; to get started
+              Tap "Add Expense" to get started
             </Text>
           </View>
         )}
@@ -491,7 +491,7 @@ export default function DayWiseExpensesScreen() {
                           fontSize: category === 'Investment/MF/SIP' ? 11 : 12
                         }
                       ]}>
-                        {category === 'Investment/MF/SIP' ? 'Investment\nMF/SIP' : category}
+                        {category === 'Investment/MF/SIP' ? 'Investment MF/SIP' : category}
                       </Text>
                     </TouchableOpacity>
                   ))}
