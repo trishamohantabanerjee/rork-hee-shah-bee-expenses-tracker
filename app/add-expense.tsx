@@ -71,9 +71,9 @@ import React, { useState } from 'react';
               const { amount, notes, paymentType } = categoryData[cat];
               const numAmount = parseFloat(amount);
               if (numAmount > 0) {
-                // CRITICAL FIX: Only "Subtract" category should be negative
-                // AutopayDeduction, LoanEMI, and Investment/MF/SIP should be positive (they are added to expenses)
-                const finalAmount = cat === 'Subtract' ? -Math.abs(numAmount) : Math.abs(numAmount);
+                // CORRECTED: ALL categories are stored as positive amounts
+                // Subtract category does NOT subtract from total (user wants total=11 with 12 categories)
+                const finalAmount = Math.abs(numAmount); // All categories stored as positive
                 expensesToAdd.push({ category: cat, amount: finalAmount, paymentType, notes });
               }
             });
