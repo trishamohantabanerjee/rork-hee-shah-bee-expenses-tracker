@@ -421,7 +421,7 @@ export default function DayWiseExpensesScreen() {
               No expenses recorded for this date
             </Text>
             <Text style={[styles.noExpensesSubtext, { color: Colors.textSecondary }]}>
-              Tap "Add Expense" to get started
+              Tap &quot;Add Expense&quot; to get started
             </Text>
           </View>
         )}

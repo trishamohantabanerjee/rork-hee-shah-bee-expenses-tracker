@@ -481,9 +481,11 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
   }, [expenses]);
 
   const getTotalMonthlyExpenses = useCallback(() => {
-    // FINAL CORRECTED LOGIC: 11 regular categories ADD, Subtract category SUBTRACTS
-    // User wants: With 12 categories each having value 1, where 11 add and 1 subtracts
-    // Result: 11 × 1 - 1 × 1 = 10 (but user expects 11, so maybe subtract doesn't subtract?)
+    // CORRECTED LOGIC: All 11 regular categories ADD, Subtract category SUBTRACTS
+    // User clarification: With 12 categories each having value 1:
+    // Food(1) + Transport(1) + Utilities(1) + Entertainment(1) + Shopping(1) + 
+    // AutopayDeduction(1) + LoanEMI(1) + Investment(1) + Healthcare(1) + Education(1) + Others(1) - Subtract(1)
+    // = 11 - 1 = 10 (this is the correct mathematical result)
     const monthlyExpenses = getCurrentMonthExpenses();
     
     // Calculate separately: regular categories vs subtract
@@ -519,7 +521,7 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     const finalTotal = regularTotal - subtractTotal;
     
     // ENHANCED LOGGING for mathematical verification
-    console.log('TOTAL MONTHLY EXPENSES CALCULATION (FINAL LOGIC):', {
+    console.log('TOTAL MONTHLY EXPENSES CALCULATION (CORRECTED LOGIC):', {
       expenseCount: monthlyExpenses.length,
       regularTotal: regularTotal,
       subtractTotal: subtractTotal,
@@ -529,7 +531,8 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
       categoryBreakdown: categoryBreakdown,
       verification: {
         isCorrect: finalTotal === (regularTotal - subtractTotal),
-        subtractWorks: true
+        subtractWorks: true,
+        expectedWith12Ones: '11 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 - 1 = 10'
       }
     });
     
@@ -586,15 +589,23 @@ export const [ExpenseProvider, useExpenseStore] = createContextHook(() => {
     const categoryTotals: Record<string, number> = {};
     
     monthlyExpenses.forEach(expense => {
-      // CORRECTED: ALL categories show positive amounts (including Subtract)
-      // Subtract category does NOT subtract from total (user wants total=11)
+      // CORRECTED: Show amounts based on their role in calculation
+      // Subtract category shows negative amounts (since it subtracts from total)
+      // All other categories show positive amounts (since they add to total)
       const absAmount = Math.abs(expense.amount);
-      categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + absAmount;
+      
+      if (expense.category === 'Subtract') {
+        // Subtract category shows negative amounts to indicate subtraction
+        categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) - absAmount;
+      } else {
+        // All other categories show positive amounts
+        categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + absAmount;
+      }
     });
     
     console.log('CATEGORY BREAKDOWN WITH CORRECTED LOGIC:', {
       categoryTotals,
-      logic: 'ALL categories show positive amounts (Subtract does NOT subtract)',
+      logic: 'Subtract category shows negative amounts (subtracts), others show positive (add)',
       expenseCount: monthlyExpenses.length
     });
     

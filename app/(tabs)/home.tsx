@@ -58,15 +58,13 @@ import React, { useState } from 'react';
       // Example: 70,000 - 6,000 = 64,000 remaining
 
       const handleExport = async () => {
-        // UPDATED: Use the same mathematical logic as the store
-        // AutopayDeduction and LoanEMI show positive amounts (they are added to expenses)
-        // Only Subtract category shows negative amounts
+        // CORRECTED: Use the same mathematical logic as the store
+        // All categories show positive amounts in export, but Subtract category subtracts from total
         const header = 'Date\tExpenseType\tPaymentType\tAmount\tNotes';
         const rows = expenses.map(e => {
           // Apply the same mathematical logic as in the app:
-          // - All categories are ADDED except "Subtract" category
-          // - AutopayDeduction and LoanEMI are ADDED (positive amounts)
-          // - Only "Subtract" category should show negative amounts
+          // - All categories are ADDED except "Subtract" category which SUBTRACTS
+          // - In export, show Subtract as negative to indicate it subtracts from total
           let displayAmount = Math.abs(e.amount); // Always show positive amounts
           if (e.category === 'Subtract') {
             displayAmount = -Math.abs(e.amount); // Only Subtract category shows negative
@@ -77,7 +75,7 @@ import React, { useState } from 'react';
         const csv = [header, ...rows].join('\n');
         
         // ENHANCED: Add calculation summary
-        const summary = `\n\nSUMMARY:\nTotal Monthly Expenses: ₹${totalMonthly.toLocaleString()}\nBudget: ₹${budget?.monthly.toLocaleString() || 'Not Set'}\nRemaining: ₹${remainingBudget?.toLocaleString() || 'N/A'}\nLogic: All categories ADDED except Subtract (subtracted)`;
+        const summary = `\n\nSUMMARY:\nTotal Monthly Expenses: ₹${totalMonthly.toLocaleString()}\nBudget: ₹${budget?.monthly.toLocaleString() || 'Not Set'}\nRemaining: ₹${remainingBudget?.toLocaleString() || 'N/A'}\nLogic: 11 categories ADD, Subtract category SUBTRACTS`;
         const finalCsv = csv + summary;
         
         await Clipboard.setStringAsync(finalCsv);
@@ -92,7 +90,7 @@ import React, { useState } from 'react';
             const categoryBreakdown = Object.entries(expensesByCategory)
               .map(([cat, amount]) => `${cat}: ₹${Math.abs(amount).toLocaleString()}${amount < 0 ? ' (subtracted)' : ' (added)'}`)
               .join('\n');
-            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions\n\nCategory Breakdown:\n${categoryBreakdown}\n\nLogic: All categories ADDED except Subtract (subtracted)`;
+            message = `Total Spent This Month: ₹${totalMonthly.toLocaleString()}\n${monthlyExpenses.length} transactions\n\nCategory Breakdown:\n${categoryBreakdown}\n\nLogic: 11 categories ADD, Subtract category SUBTRACTS`;
             break;
           case 'remaining':
             if (remainingBudget !== null && budget) {
@@ -306,7 +304,7 @@ import React, { useState } from 'react';
                   );
                 })}
                 <Text style={[styles.cardSubtext, { color: Colors.textSecondary, marginTop: 12, fontSize: 11 }]}>
-                  Logic: All amounts ADDED except Subtract (shown in red, subtracted from total)
+                  Logic: 11 categories ADD, Subtract category SUBTRACTS (shown in red)
                 </Text>
               </View>
             )}
