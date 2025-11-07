@@ -23,7 +23,8 @@ import React, { useState } from 'react';
       Edit3,
       Save,
       X,
-      Calendar
+      Calendar,
+      Calculator
     } from 'lucide-react-native';
     import * as Clipboard from 'expo-clipboard';
     import { Colors } from '@/constants/colors';
@@ -255,6 +256,16 @@ import React, { useState } from 'react';
               >
                 <Calendar size={24} color={Colors.primary} />
                 <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Day-wise View</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.quickActions}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.secondaryButton, { backgroundColor: Colors.card, borderColor: Colors.border }]}
+                onPress={() => router.push('/test-calculations')}
+              >
+                <Calculator size={24} color={Colors.primary} />
+                <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Test Calculations</Text>
               </TouchableOpacity>
             </View>
 
